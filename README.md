@@ -1,1 +1,20 @@
-# KatKat
+# KatKat Backend 🏢🚀
+
+**KatKat** is a next-generation, cloud-native B2B2C SaaS backend ecosystem engineered to transform traditional, rigid property management platforms into a dynamic, gamified community experience. Moving beyond mere accounting tools, KatKat bridges official estate administration with real-time neighborhood solidarity and social gamification.
+
+The system is built on top of **ABP Framework** and **.NET 10 (C# 14)** using strict **Domain-Driven Design (DDD)** principles and robust multi-tenant data isolation.
+
+---
+
+## 🌟 Core Features & Modules
+
+* **Official Property Management:** Zero-friction automated billing split engine based on dynamic property share factors (`ShareFactor`), digital public notices, and comprehensive maintenance/ticket logging.
+* **"KatKat Score" Gamification Engine:** A fully deterministic nightly background worker that aggregates building-wide performance across Financial Health (payment speed), Social Solidarity (completed neighborly requests), and Management Operational Velocity (issue resolution time) into a localized public leaderboard.
+* **Peer-to-Peer (P2P) Solidarity Hub:** A real-time, channel-based request network allowing verified residents to broadcast localized community needs (e.g., borrowing tools or immediate logistical help) with flexible user-configured notification controls (*Opt-In/Opt-Out*).
+* **Real-Time Resource Reservation & SOS Hub:** Live multi-client dashboard powered by SignalR handling spot-on reservation logic for limited parking zones or community zones alongside high-priority disaster matrix visualization dashboards.
+
+---
+
+## 📐 Software Architecture & Structure
+
+KatKat implements a clean, layered architectural pattern following DDD practices as a decoupled modular plugin framework.
