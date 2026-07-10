@@ -4,6 +4,7 @@
     <Version>0.1.0</Version>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <AbpProjectType>module</AbpProjectType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   
   <ItemGroup>

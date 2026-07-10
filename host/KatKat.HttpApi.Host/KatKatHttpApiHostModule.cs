@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using KatKat.EntityFrameworkCore;
+using KatKat.Hubs;
 using KatKat.MultiTenancy;
 using StackExchange.Redis;
 using Microsoft.OpenApi.Models;
@@ -19,12 +20,12 @@ using Volo.Abp.AspNetCore.Authentication.JwtBearer;
 using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
-using Volo.Abp.AuditLogging.EntityFrameworkCore;
+using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.EntityFrameworkCore;
-using Volo.Abp.EntityFrameworkCore.SqlServer;
+using Volo.Abp.EntityFrameworkCore.PostgreSql;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
@@ -45,8 +46,7 @@ namespace KatKat;
     typeof(AbpAspNetCoreAuthenticationJwtBearerModule),
     typeof(AbpAutofacModule),
     typeof(AbpCachingStackExchangeRedisModule),
-    typeof(AbpEntityFrameworkCoreSqlServerModule),
-    typeof(AbpAuditLoggingEntityFrameworkCoreModule),
+    typeof(AbpEntityFrameworkCorePostgreSqlModule),
     typeof(AbpPermissionManagementEntityFrameworkCoreModule),
     typeof(AbpSettingManagementEntityFrameworkCoreModule),
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
@@ -63,12 +63,20 @@ public class KatKatHttpApiHostModule : AbpModule
 
         Configure<AbpDbContextOptions>(options =>
         {
-            options.UseSqlServer();
+            options.UseNpgsql();
         });
 
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = MultiTenancyConsts.IsEnabled;
+        });
+
+        // AuditLogging's own tables (AbpAuditLogs, AbpEntityChanges...) are not wanted - KatKat's
+        // entities already carry full audit fields (CreationTime/CreatorId/...) via
+        // FullAuditedAggregateRoot, making a separate audit trail redundant for this module.
+        Configure<AbpAuditingOptions>(options =>
+        {
+            options.IsEnabled = false;
         });
 
         if (hostingEnvironment.IsDevelopment())
@@ -86,37 +94,38 @@ public class KatKatHttpApiHostModule : AbpModule
             configuration["AuthServer:Authority"]!,
             new Dictionary<string, string>
             {
-                {"KatKat", "KatKat API"}
+                {KatKatRemoteServiceConsts.RemoteServiceName, KatKatRemoteServiceConsts.DisplayName}
             },
             options =>
             {
-                options.SwaggerDoc("v1", new OpenApiInfo {Title = "KatKat API", Version = "v1"});
-                options.DocInclusionPredicate((docName, description) => true);
+                options.SwaggerDoc("v1", new OpenApiInfo {Title = KatKatRemoteServiceConsts.DisplayName, Version = "v1"});
+
+                // Only expose this module's own endpoints - ABP's built-in module APIs
+                // (Identity, Tenant/Permission/Setting Management, Account...) stay out of Swagger.
+                options.DocInclusionPredicate((docName, description) =>
+                    description.RelativePath != null &&
+                    description.RelativePath.StartsWith(
+                        KatKatRemoteServiceConsts.RoutePathPrefix, StringComparison.OrdinalIgnoreCase));
+
                 options.CustomSchemaIds(type => type.FullName);
+
+                var httpApiXmlPath = Path.Combine(AppContext.BaseDirectory, "KatKat.HttpApi.xml");
+                if (File.Exists(httpApiXmlPath))
+                {
+                    options.IncludeXmlComments(httpApiXmlPath);
+                }
+
+                var applicationContractsXmlPath = Path.Combine(AppContext.BaseDirectory, "KatKat.Application.Contracts.xml");
+                if (File.Exists(applicationContractsXmlPath))
+                {
+                    options.IncludeXmlComments(applicationContractsXmlPath);
+                }
             });
 
         Configure<AbpLocalizationOptions>(options =>
         {
-            options.Languages.Add(new LanguageInfo("ar", "ar", "العربية"));
-            options.Languages.Add(new LanguageInfo("cs", "cs", "Čeština"));
             options.Languages.Add(new LanguageInfo("en", "en", "English"));
-            options.Languages.Add(new LanguageInfo("en-GB", "en-GB", "English (UK)"));
-            options.Languages.Add(new LanguageInfo("fi", "fi", "Finnish"));
-            options.Languages.Add(new LanguageInfo("fr", "fr", "Français"));
-            options.Languages.Add(new LanguageInfo("hi", "hi", "Hindi"));
-            options.Languages.Add(new LanguageInfo("is", "is", "Icelandic"));
-            options.Languages.Add(new LanguageInfo("it", "it", "Italiano"));
-            options.Languages.Add(new LanguageInfo("hu", "hu", "Magyar"));
-            options.Languages.Add(new LanguageInfo("pt-BR", "pt-BR", "Português"));
-            options.Languages.Add(new LanguageInfo("ro-RO", "ro-RO", "Română"));
-            options.Languages.Add(new LanguageInfo("ru", "ru", "Русский"));
-            options.Languages.Add(new LanguageInfo("sk", "sk", "Slovak"));
             options.Languages.Add(new LanguageInfo("tr", "tr", "Türkçe"));
-            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文"));
-            options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "繁體中文"));
-            options.Languages.Add(new LanguageInfo("de-DE", "de-DE", "Deutsch"));
-            options.Languages.Add(new LanguageInfo("es", "es", "Español"));
-            options.Languages.Add(new LanguageInfo("el", "el", "Ελληνικά"));
         });
 
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -124,7 +133,7 @@ public class KatKatHttpApiHostModule : AbpModule
             {
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
-                options.Audience = "KatKat";
+                options.Audience = KatKatRemoteServiceConsts.RemoteServiceName;
             });
 
         Configure<AbpDistributedCacheOptions>(options =>
@@ -132,7 +141,7 @@ public class KatKatHttpApiHostModule : AbpModule
             options.KeyPrefix = "KatKat:";
         });
 
-        var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("KatKat");
+        var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName(KatKatRemoteServiceConsts.RemoteServiceName);
         if (!hostingEnvironment.IsDevelopment())
         {
             var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!);
@@ -192,10 +201,12 @@ public class KatKatHttpApiHostModule : AbpModule
 
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
-            options.OAuthScopes("KatKat");
+            options.OAuthScopes(KatKatRemoteServiceConsts.RemoteServiceName);
         });
-        app.UseAuditing();
         app.UseAbpSerilogEnrichers();
-        app.UseConfiguredEndpoints();
+        app.UseConfiguredEndpoints(endpoints =>
+        {
+            endpoints.MapHub<KatKatHub>(KatKatHubConsts.RoutePath);
+        });
     }
 }

@@ -1,7 +1,4 @@
-﻿using KatKat.Buildings;
-using KatKat.Complexes;
-using KatKat.FlatMembers;
-using KatKat.Flats;
+﻿using KatKat.Entities;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
@@ -18,6 +15,24 @@ public class KatKatDbContext : AbpDbContext<KatKatDbContext>, IKatKatDbContext
     public DbSet<Flat> Flats { get; set; } = null!;
 
     public DbSet<FlatMember> FlatMembers { get; set; } = null!;
+
+    public DbSet<P2PRequest> P2PRequests { get; set; } = null!;
+
+    public DbSet<UserPreference> UserPreferences { get; set; } = null!;
+
+    public DbSet<ComplexScore> ComplexScores { get; set; } = null!;
+
+    public DbSet<Expense> Expenses { get; set; } = null!;
+
+    public DbSet<ExpenseShare> ExpenseShares { get; set; } = null!;
+
+    public DbSet<Issue> Issues { get; set; } = null!;
+
+    public DbSet<Resource> Resources { get; set; } = null!;
+
+    public DbSet<ResourceReservation> ResourceReservations { get; set; } = null!;
+
+    public DbSet<SosAlert> SosAlerts { get; set; } = null!;
 
     public KatKatDbContext(DbContextOptions<KatKatDbContext> options)
         : base(options)

@@ -1,7 +1,14 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Threading.Tasks;
+using KatKat.BackgroundWorkers;
+using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp;
+using Volo.Abp.Application;
+using Volo.Abp.AspNetCore.SignalR;
+using Volo.Abp.BackgroundWorkers;
+using Volo.Abp.FluentValidation;
 using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
-using Volo.Abp.Application;
+using Volo.Abp.MultiTenancy;
 
 namespace KatKat;
 
@@ -9,12 +16,21 @@ namespace KatKat;
     typeof(KatKatDomainModule),
     typeof(KatKatApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpMapperlyModule)
+    typeof(AbpMapperlyModule),
+    typeof(AbpFluentValidationModule),
+    typeof(AbpAspNetCoreSignalRModule),
+    typeof(AbpBackgroundWorkersModule),
+    typeof(AbpMultiTenancyModule)
     )]
 public class KatKatApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddMapperlyObjectMapper<KatKatApplicationModule>();
+    }
+
+    public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
+    {
+        await context.AddBackgroundWorkerAsync<ScoreCalculationWorker>();
     }
 }

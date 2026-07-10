@@ -12,7 +12,7 @@ public class KatKatHttpApiHostMigrationsDbContextFactory : IDesignTimeDbContextF
         var configuration = BuildConfiguration();
 
         var builder = new DbContextOptionsBuilder<KatKatHttpApiHostMigrationsDbContext>()
-            .UseSqlServer(configuration.GetConnectionString("KatKat"));
+            .UseNpgsql(configuration.GetConnectionString(KatKatDbProperties.ConnectionStringName));
 
         return new KatKatHttpApiHostMigrationsDbContext(builder.Options);
     }

@@ -1,12 +1,4 @@
-﻿using KatKat.Buildings;
-using KatKat.Complexes;
-using KatKat.EntityFrameworkCore.Buildings;
-using KatKat.EntityFrameworkCore.Complexes;
-using KatKat.EntityFrameworkCore.FlatMembers;
-using KatKat.EntityFrameworkCore.Flats;
-using KatKat.FlatMembers;
-using KatKat.Flats;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.Modularity;
 
@@ -20,12 +12,10 @@ public class KatKatEntityFrameworkCoreModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddAbpDbContext<KatKatDbContext>(options =>
-        {
-            options.AddRepository<Complex, EfCoreComplexRepository>();
-            options.AddRepository<Building, EfCoreBuildingRepository>();
-            options.AddRepository<Flat, EfCoreFlatRepository>();
-            options.AddRepository<FlatMember, EfCoreFlatMemberRepository>();
-        });
+        // Custom repositories (EfCoreComplexRepository etc.) are NOT registered here:
+        // ABP's conventional registrar auto-exposes any class ending in "Repository" that
+        // implements an IRepository-derived interface for every such interface it implements,
+        // as long as it lives in a module-loaded assembly - which this project's is.
+        context.Services.AddAbpDbContext<KatKatDbContext>();
     }
 }

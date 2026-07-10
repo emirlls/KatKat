@@ -1,7 +1,7 @@
-﻿using KatKat.Buildings;
-using KatKat.Complexes;
-using KatKat.FlatMembers;
-using KatKat.Flats;
+﻿using KatKat.Constants;
+using KatKat.Entities;
+using KatKat.P2PRequests;
+using KatKat.Resources;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
@@ -17,7 +17,7 @@ public static class KatKatDbContextModelCreatingExtensions
 
         builder.Entity<Complex>(b =>
         {
-            b.ToTable(KatKatDbProperties.DbTablePrefix + "Complexes", KatKatDbProperties.DbSchema);
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ComplexConsts.TableName, KatKatDbProperties.DbSchema);
 
             b.ConfigureByConvention();
 
@@ -25,13 +25,15 @@ public static class KatKatDbContextModelCreatingExtensions
             b.Property(x => x.City).IsRequired().HasMaxLength(ComplexConsts.MaxCityLength);
             b.Property(x => x.District).IsRequired().HasMaxLength(ComplexConsts.MaxDistrictLength);
             b.Property(x => x.Address).HasMaxLength(ComplexConsts.MaxAddressLength);
+            b.Property(x => x.Latitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
+            b.Property(x => x.Longitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
 
             b.HasIndex(x => new { x.TenantId, x.Name });
         });
 
         builder.Entity<Building>(b =>
         {
-            b.ToTable(KatKatDbProperties.DbTablePrefix + "Buildings", KatKatDbProperties.DbSchema);
+            b.ToTable(KatKatDbProperties.DbTablePrefix + BuildingConsts.TableName, KatKatDbProperties.DbSchema);
 
             b.ConfigureByConvention();
 
@@ -44,7 +46,7 @@ public static class KatKatDbContextModelCreatingExtensions
 
         builder.Entity<Flat>(b =>
         {
-            b.ToTable(KatKatDbProperties.DbTablePrefix + "Flats", KatKatDbProperties.DbSchema);
+            b.ToTable(KatKatDbProperties.DbTablePrefix + FlatConsts.TableName, KatKatDbProperties.DbSchema);
 
             b.ConfigureByConvention();
 
@@ -58,7 +60,7 @@ public static class KatKatDbContextModelCreatingExtensions
 
         builder.Entity<FlatMember>(b =>
         {
-            b.ToTable(KatKatDbProperties.DbTablePrefix + "FlatMembers", KatKatDbProperties.DbSchema);
+            b.ToTable(KatKatDbProperties.DbTablePrefix + FlatMemberConsts.TableName, KatKatDbProperties.DbSchema);
 
             b.ConfigureByConvention();
 
@@ -68,6 +70,133 @@ public static class KatKatDbContextModelCreatingExtensions
             // lives in a separate module/bounded context, so UserId is a loose reference.
             b.HasIndex(x => new { x.FlatId, x.UserId }).IsUnique();
             b.HasIndex(x => x.UserId);
+        });
+
+        builder.Entity<P2PRequest>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + P2PRequestConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Title).IsRequired().HasMaxLength(P2PRequestConsts.MaxTitleLength);
+            b.Property(x => x.Description).HasMaxLength(P2PRequestConsts.MaxDescriptionLength);
+
+            // ComplexId is not FK-constrained: a Complex spans Buildings/Flats but a P2PRequest
+            // is scoped to the whole Complex directly, and RequesterUserId/FulfilledByUserId are
+            // loose references to the Identity module, same convention as FlatMember.UserId.
+            b.HasIndex(x => new { x.ComplexId, x.Status });
+            b.HasIndex(x => x.RequesterUserId);
+        });
+
+        builder.Entity<UserPreference>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + UserPreferenceConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+        });
+
+        builder.Entity<ComplexScore>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ComplexScoreConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(ComplexConsts.MaxNameLength);
+            b.Property(x => x.City).IsRequired().HasMaxLength(ComplexConsts.MaxCityLength);
+            b.Property(x => x.District).IsRequired().HasMaxLength(ComplexConsts.MaxDistrictLength);
+            b.Property(x => x.Latitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
+            b.Property(x => x.Longitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
+            b.Property(x => x.FinancialScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
+            b.Property(x => x.SocialScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
+            b.Property(x => x.ResolutionScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
+            b.Property(x => x.TotalScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
+
+            b.HasIndex(x => x.ComplexId).IsUnique();
+            b.HasIndex(x => new { x.District, x.TotalScore });
+            // Bounding-box prefilter index for the nearby (radius-based) leaderboard.
+            b.HasIndex(x => new { x.Latitude, x.Longitude });
+        });
+
+        builder.Entity<Expense>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ExpenseConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Title).IsRequired().HasMaxLength(ExpenseConsts.MaxTitleLength);
+            b.Property(x => x.Description).HasMaxLength(ExpenseConsts.MaxDescriptionLength);
+            b.Property(x => x.ReceiptImageUrl).HasMaxLength(ExpenseConsts.MaxReceiptImageUrlLength);
+            b.Property(x => x.TotalAmount).HasPrecision(KatKatConsts.AmountPrecision, KatKatConsts.AmountScale);
+
+            b.HasIndex(x => new { x.ComplexId, x.IssuedAt });
+        });
+
+        builder.Entity<ExpenseShare>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ExpenseShareConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Amount).HasPrecision(KatKatConsts.AmountPrecision, KatKatConsts.AmountScale);
+
+            b.HasOne<Expense>().WithMany().HasForeignKey(x => x.ExpenseId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+            b.HasOne<Flat>().WithMany().HasForeignKey(x => x.FlatId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+
+            b.HasIndex(x => x.FlatId);
+            b.HasIndex(x => new { x.ExpenseId, x.IsPaid });
+        });
+
+        builder.Entity<Issue>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + IssueConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Title).IsRequired().HasMaxLength(IssueConsts.MaxTitleLength);
+            b.Property(x => x.Description).HasMaxLength(IssueConsts.MaxDescriptionLength);
+            b.Property(x => x.PhotoUrl).HasMaxLength(IssueConsts.MaxPhotoUrlLength);
+
+            b.HasIndex(x => new { x.ComplexId, Status = x.Statuses });
+            b.HasIndex(x => x.ReporterUserId);
+        });
+
+        builder.Entity<Resource>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ResourceConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(ResourceConsts.MaxNameLength);
+
+            b.HasOne<Complex>().WithMany().HasForeignKey(x => x.ComplexId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+
+            b.HasIndex(x => new { x.ComplexId, x.Type });
+        });
+
+        builder.Entity<ResourceReservation>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ResourceReservationConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasOne<Resource>().WithMany().HasForeignKey(x => x.ResourceId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+
+            // Overlap checks always filter by ResourceId + Status first, so that's the index shape.
+            b.HasIndex(x => new { x.ResourceId, x.Status, x.StartTime, x.EndTime });
+        });
+
+        builder.Entity<SosAlert>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + SosAlertConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasOne<Flat>().WithMany().HasForeignKey(x => x.FlatId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+
+            b.HasIndex(x => new { x.ComplexId, x.CreationTime });
+            b.HasIndex(x => x.FlatId);
         });
     }
 }
