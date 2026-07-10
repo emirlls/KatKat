@@ -1,0 +1,17 @@
+{
+  "culture": "tr",
+  "texts": {
+    "MyAccount":  "Hesabım",
+    "SamplePageMessage": "KatKat modulünden örnek bir sayfa",
+    "KatKat:010001": "Bir site (complex) sadece bir tenant kapsamında oluşturulabilir.",
+    "KatKat:010002": "'{name}' isimli bir site zaten mevcut.",
+    "KatKat:010003": "Yeni abonelik bitiş tarihi, mevcut bitiş tarihinden sonra olmalıdır.",
+    "KatKat:020001": "Bu sitede '{name}' isimli bir blok zaten mevcut.",
+    "KatKat:020002": "Kat sayısı pozitif bir değer olmalıdır.",
+    "KatKat:030001": "Bu blokta '{flatNumber}' numaralı bir daire zaten mevcut.",
+    "KatKat:030002": "Arsa payı sıfırdan büyük olmalıdır.",
+    "KatKat:040001": "Bu kullanıcı zaten dairenin bir üyesi.",
+    "KatKat:040002": "Sadece onay bekleyen sakinler onaylanabilir.",
+    "KatKat:040003": "Onay bekleyen bir sakin doğrudan terfi ettirilemez. Önce onaylanmalıdır."
+  }
+}

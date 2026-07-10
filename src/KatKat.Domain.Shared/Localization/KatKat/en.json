@@ -1,0 +1,17 @@
+{
+  "culture": "en",
+  "texts": {
+    "MyAccount":  "My account",
+    "SamplePageMessage": "A sample page for the KatKat module",
+    "KatKat:010001": "A complex can only be created inside a tenant scope.",
+    "KatKat:010002": "A complex with the name '{name}' already exists.",
+    "KatKat:010003": "The new subscription end date must be later than the current one.",
+    "KatKat:020001": "A building named '{name}' already exists in this complex.",
+    "KatKat:020002": "Floor count must be a positive number.",
+    "KatKat:030001": "A flat numbered '{flatNumber}' already exists in this building.",
+    "KatKat:030002": "Share factor must be greater than zero.",
+    "KatKat:040001": "This user is already a member of the flat.",
+    "KatKat:040002": "Only unverified residents can be approved.",
+    "KatKat:040003": "An unverified resident cannot be promoted directly. Approve them first."
+  }
+}
