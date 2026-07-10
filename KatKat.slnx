@@ -1,0 +1,22 @@
+<Solution>
+  <Folder Name="/host/">
+    <Project Path="host/KatKat.Host.Shared/KatKat.Host.Shared.csproj" />
+    <Project Path="host/KatKat.HttpApi.Host/KatKat.HttpApi.Host.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/KatKat.Application.Contracts/KatKat.Application.Contracts.csproj" />
+    <Project Path="src/KatKat.Application/KatKat.Application.csproj" />
+    <Project Path="src/KatKat.Domain.Shared/KatKat.Domain.Shared.csproj" />
+    <Project Path="src/KatKat.Domain/KatKat.Domain.csproj" />
+    <Project Path="src/KatKat.EntityFrameworkCore/KatKat.EntityFrameworkCore.csproj" />
+    <Project Path="src/KatKat.HttpApi.Client/KatKat.HttpApi.Client.csproj" />
+    <Project Path="src/KatKat.HttpApi/KatKat.HttpApi.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/KatKat.Application.Tests/KatKat.Application.Tests.csproj" />
+    <Project Path="test/KatKat.Domain.Tests/KatKat.Domain.Tests.csproj" />
+    <Project Path="test/KatKat.EntityFrameworkCore.Tests/KatKat.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="test/KatKat.HttpApi.Client.ConsoleTestApp/KatKat.HttpApi.Client.ConsoleTestApp.csproj" />
+    <Project Path="test/KatKat.TestBase/KatKat.TestBase.csproj" />
+  </Folder>
+</Solution>

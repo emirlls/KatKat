@@ -1,0 +1,111 @@
+{
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {},
+      "host": {}
+    }
+  },
+  "packages": {
+    "KatKat.Domain.Shared": {
+      "path": "src/KatKat.Domain.Shared/KatKat.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "KatKat.Domain": {
+      "path": "src/KatKat.Domain/KatKat.Domain.abppkg",
+      "folder": "src"
+    },
+    "KatKat.Application.Contracts": {
+      "path": "src/KatKat.Application.Contracts/KatKat.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "KatKat.Application": {
+      "path": "src/KatKat.Application/KatKat.Application.abppkg",
+      "folder": "src"
+    },
+    "KatKat.EntityFrameworkCore": {
+      "path": "src/KatKat.EntityFrameworkCore/KatKat.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "KatKat.MongoDB": {
+      "path": "src/KatKat.MongoDB/KatKat.MongoDB.abppkg",
+      "folder": "src"
+    },
+    "KatKat.HttpApi": {
+      "path": "src/KatKat.HttpApi/KatKat.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "KatKat.HttpApi.Client": {
+      "path": "src/KatKat.HttpApi.Client/KatKat.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "KatKat.TestBase": {
+      "path": "test/KatKat.TestBase/KatKat.TestBase.abppkg",
+      "folder": "test"
+    },
+    "KatKat.EntityFrameworkCore.Tests": {
+      "path": "test/KatKat.EntityFrameworkCore.Tests/KatKat.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "KatKat.MongoDB.Tests": {
+      "path": "test/KatKat.MongoDB.Tests/KatKat.MongoDB.Tests.abppkg",
+      "folder": "test"
+    },
+    "KatKat.Domain.Tests": {
+      "path": "test/KatKat.Domain.Tests/KatKat.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "KatKat.Application.Tests": {
+      "path": "test/KatKat.Application.Tests/KatKat.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "KatKat.HttpApi.Host": {
+      "path": "host/KatKat.HttpApi.Host/KatKat.HttpApi.Host.abppkg",
+      "folder": "host"
+    },
+    "KatKat.Web": {
+      "path": "src/KatKat.Web/KatKat.Web.abppkg",
+      "folder": "src"
+    },
+    "KatKat.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/KatKat.HttpApi.Client.ConsoleTestApp/KatKat.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "KatKat.Web.Host": {
+      "path": "host/KatKat.Web.Host/KatKat.Web.Host.abppkg",
+      "folder": "host"
+    },
+    "KatKat.AuthServer": {
+      "path": "host/KatKat.AuthServer/KatKat.AuthServer.abppkg",
+      "folder": "host"
+    },
+    "KatKat.Host.Shared": {
+      "path": "host/KatKat.Host.Shared/KatKat.Host.Shared.abppkg",
+      "folder": "host"
+    },
+    "KatKat.Web.Unified": {
+      "path": "host/KatKat.Web.Unified/KatKat.Web.Unified.abppkg",
+      "folder": "host"
+    },
+    "KatKat.Blazor": {
+      "path": "src/KatKat.Blazor/KatKat.Blazor.abppkg",
+      "folder": "src"
+    },
+    "KatKat.Blazor.Host": {
+      "path": "host/KatKat.Blazor.Host/KatKat.Blazor.Host.abppkg",
+      "folder": "host"
+    },
+    "KatKat.Blazor.Server": {
+      "path": "src/KatKat.Blazor.Server/KatKat.Blazor.Server.abppkg",
+      "folder": "src"
+    },
+    "KatKat.Blazor.WebAssembly": {
+      "path": "src/KatKat.Blazor.WebAssembly/KatKat.Blazor.WebAssembly.abppkg",
+      "folder": "src"
+    },
+    "KatKat.Blazor.Server.Host": {
+      "path": "host/KatKat.Blazor.Server.Host/KatKat.Blazor.Server.Host.abppkg",
+      "folder": "host"
+    }
+  }
+}
