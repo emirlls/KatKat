@@ -21,3 +21,9 @@ The system is built on top of **ABP Framework** and **.NET 10 (C# 14)** using st
 ## 📐 Software Architecture & Structure
 
 KatKat implements a clean, layered architectural pattern following DDD practices as a decoupled modular plugin framework.
+
+## 👥 Development & Collaboration
+
+This repository is a product of human-AI pair programming:
+* **Lead Software Engineer & Product Owner:** Emir Leylek
+* **Co-Architect & AI Collaborator:** Claude AI (Anthropic)
