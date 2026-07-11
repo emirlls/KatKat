@@ -8,7 +8,6 @@ using KatKat.Entities;
 using KatKat.Hubs;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Volo.Abp.Users;
 
@@ -52,7 +51,6 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
         return alerts.Select(a => ObjectMapper.Map<SosAlert, SosAlertDto>(a)).ToList();
     }
 
-    [Authorize(KatKatPermissions.SosAlerts.Resolve)]
     public async Task<SosAlertDto> ResolveAsync(Guid id)
     {
         var alert = await _sosAlertRepository.GetAsync(id);

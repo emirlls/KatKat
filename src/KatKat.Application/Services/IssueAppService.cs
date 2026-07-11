@@ -9,7 +9,6 @@ using KatKat.Enums;
 using KatKat.Hubs;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Volo.Abp.Users;
 
@@ -50,7 +49,6 @@ public class IssueAppService : KatKatAppService, IIssueAppService
         return ObjectMapper.Map<Issue, IssueDto>(issue);
     }
 
-    [Authorize(KatKatPermissions.Issues.Resolve)]
     public async Task<IssueDto> StartProgressAsync(Guid id)
     {
         var issue = await _issueRepository.GetAsync(id);
@@ -62,7 +60,6 @@ public class IssueAppService : KatKatAppService, IIssueAppService
         return ObjectMapper.Map<Issue, IssueDto>(issue);
     }
 
-    [Authorize(KatKatPermissions.Issues.Resolve)]
     public async Task<IssueDto> ResolveAsync(Guid id)
     {
         var issue = await _issueRepository.GetAsync(id);

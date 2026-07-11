@@ -7,7 +7,6 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 
 namespace KatKat.Services;
 
@@ -34,7 +33,6 @@ public class ResourceAppService : KatKatAppService, IResourceAppService
         return resources.Select(r => ObjectMapper.Map<Resource, ResourceDto>(r)).ToList();
     }
 
-    [Authorize(KatKatPermissions.Resources.Create)]
     public async Task<ResourceDto> CreateAsync(CreateResourceDto input)
     {
         var resource = await _resourceManager.CreateAsync(input.ComplexId, input.Name, input.Type);

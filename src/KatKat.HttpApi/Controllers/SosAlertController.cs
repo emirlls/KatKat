@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -15,6 +18,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/sos-alerts")]
+[RateLimit]
 public class SosAlertController : KatKatController, ISosAlertAppService
 {
     private readonly ISosAlertAppService _sosAlertAppService;
@@ -35,5 +39,6 @@ public class SosAlertController : KatKatController, ISosAlertAppService
 
     /// <summary>Manager-only: acknowledges help has reached a HelpNeeded alert.</summary>
     [HttpPost("{id}/resolve")]
+    [Authorize(KatKatPermissions.SosAlerts.Resolve)]
     public Task<SosAlertDto> ResolveAsync(Guid id) => _sosAlertAppService.ResolveAsync(id);
 }

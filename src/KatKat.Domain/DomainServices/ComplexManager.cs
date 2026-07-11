@@ -11,10 +11,12 @@ namespace KatKat.DomainServices;
 public class ComplexManager : DomainService
 {
     private readonly IComplexRepository _complexRepository;
+    private readonly INeighborhoodRepository _neighborhoodRepository;
 
-    public ComplexManager(IComplexRepository complexRepository)
+    public ComplexManager(IComplexRepository complexRepository, INeighborhoodRepository neighborhoodRepository)
     {
         _complexRepository = complexRepository;
+        _neighborhoodRepository = neighborhoodRepository;
     }
 
     /// <summary>
@@ -23,8 +25,7 @@ public class ComplexManager : DomainService
     /// </summary>
     public virtual async Task<Complex> CreateAsync(
         string name,
-        string city,
-        string district,
+        int neighborhoodId,
         string? address,
         decimal latitude,
         decimal longitude,
@@ -39,12 +40,13 @@ public class ComplexManager : DomainService
                 .WithData("name", name);
         }
 
+        await _neighborhoodRepository.GetAsync(neighborhoodId);
+
         return new Complex(
             GuidGenerator.Create(),
             tenantId,
             name,
-            city,
-            district,
+            neighborhoodId,
             address,
             latitude,
             longitude,

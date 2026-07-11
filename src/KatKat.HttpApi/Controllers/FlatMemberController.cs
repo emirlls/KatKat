@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -15,6 +18,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/flat-members")]
+[RateLimit]
 public class FlatMemberController : KatKatController, IFlatMemberAppService
 {
     private readonly IFlatMemberAppService _flatMemberAppService;
@@ -39,9 +43,11 @@ public class FlatMemberController : KatKatController, IFlatMemberAppService
 
     /// <summary>Manager-only: verifies an UnverifiedResident, moving them to Resident.</summary>
     [HttpPost("{id}/approve")]
+    [Authorize(KatKatPermissions.FlatMembers.Approve)]
     public Task<FlatMemberDto> ApproveAsync(Guid id) => _flatMemberAppService.ApproveAsync(id);
 
     /// <summary>Manager-only: promotes an already-verified member to Manager.</summary>
     [HttpPost("{id}/promote-to-manager")]
+    [Authorize(KatKatPermissions.FlatMembers.PromoteToManager)]
     public Task<FlatMemberDto> PromoteToManagerAsync(Guid id) => _flatMemberAppService.PromoteToManagerAsync(id);
 }

@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -15,6 +18,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/resources")]
+[RateLimit]
 public class ResourceController : KatKatController, IResourceAppService
 {
     private readonly IResourceAppService _resourceAppService;
@@ -35,5 +39,6 @@ public class ResourceController : KatKatController, IResourceAppService
 
     /// <summary>Creates a new reservable Resource.</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.Resources.Create)]
     public Task<ResourceDto> CreateAsync(CreateResourceDto input) => _resourceAppService.CreateAsync(input);
 }

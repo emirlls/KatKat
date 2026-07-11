@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -14,6 +17,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/expenses")]
+[RateLimit]
 public class ExpenseController : KatKatController, IExpenseAppService
 {
     private readonly IExpenseAppService _expenseAppService;
@@ -34,6 +38,7 @@ public class ExpenseController : KatKatController, IExpenseAppService
 
     /// <summary>Creates a new Expense and splits it into per-flat shares.</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.Expenses.Create)]
     public Task<ExpenseDto> CreateAsync(CreateExpenseDto input) => _expenseAppService.CreateAsync(input);
 
     /// <summary>Lists every flat's share of an Expense.</summary>

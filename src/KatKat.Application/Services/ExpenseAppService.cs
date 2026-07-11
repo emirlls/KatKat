@@ -8,7 +8,6 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Users;
 
@@ -45,7 +44,6 @@ public class ExpenseAppService : KatKatAppService, IExpenseAppService
         return expenses.Select(e => ObjectMapper.Map<Expense, ExpenseDto>(e)).ToList();
     }
 
-    [Authorize(KatKatPermissions.Expenses.Create)]
     public async Task<ExpenseDto> CreateAsync(CreateExpenseDto input)
     {
         var (expense, shares) = await _expenseManager.CreateAsync(

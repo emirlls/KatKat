@@ -69,6 +69,30 @@ public class KatKatPermissions
         public const string Resolve = Default + ".Resolve";
     }
 
+    public static class Cities
+    {
+        public const string Default = GroupName + ".Cities";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class Districts
+    {
+        public const string Default = GroupName + ".Districts";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class Neighborhoods
+    {
+        public const string Default = GroupName + ".Neighborhoods";
+        public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
+    }
+
     public static string[] GetAll()
     {
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(KatKatPermissions));

@@ -6,9 +6,7 @@ public class CreateComplexDto
 {
     public string Name { get; set; } = null!;
 
-    public string City { get; set; } = null!;
-
-    public string District { get; set; } = null!;
+    public int NeighborhoodId { get; set; }
 
     public string? Address { get; set; }
 

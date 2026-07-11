@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -14,6 +17,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/flats")]
+[RateLimit]
 public class FlatController : KatKatController, IFlatAppService
 {
     private readonly IFlatAppService _flatAppService;
@@ -34,5 +38,6 @@ public class FlatController : KatKatController, IFlatAppService
 
     /// <summary>Creates a new Flat in a Building.</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.Flats.Create)]
     public Task<FlatDto> CreateAsync(CreateFlatDto input) => _flatAppService.CreateAsync(input);
 }

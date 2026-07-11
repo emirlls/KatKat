@@ -7,6 +7,9 @@ namespace KatKat.Mappers;
 [Mapper]
 public partial class KatKatApplicationMappers
 {
+    [MapperIgnoreTarget(nameof(ComplexDto.City))]
+    [MapperIgnoreTarget(nameof(ComplexDto.District))]
+    [MapperIgnoreTarget(nameof(ComplexDto.Neighborhood))]
     public partial ComplexDto Map(Complex source);
 
     public partial BuildingDto Map(Building source);
@@ -30,4 +33,12 @@ public partial class KatKatApplicationMappers
     public partial ResourceReservationDto Map(ResourceReservation source);
 
     public partial SosAlertDto Map(SosAlert source);
+
+    public partial CityDto Map(City source);
+
+    [MapperIgnoreTarget(nameof(DistrictDto.City))]
+    public partial DistrictDto Map(District source);
+
+    [MapperIgnoreTarget(nameof(NeighborhoodDto.District))]
+    public partial NeighborhoodDto Map(Neighborhood source);
 }

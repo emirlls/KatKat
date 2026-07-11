@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -15,6 +18,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/resource-reservations")]
+[RateLimit]
 public class ResourceReservationController : KatKatController, IResourceReservationAppService
 {
     private readonly IResourceReservationAppService _resourceReservationAppService;
@@ -35,6 +39,7 @@ public class ResourceReservationController : KatKatController, IResourceReservat
 
     /// <summary>Books the Resource for a time range - rejected if it overlaps an existing reservation.</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.ResourceReservations.Create)]
     public Task<ResourceReservationDto> CreateAsync(CreateResourceReservationDto input) =>
         _resourceReservationAppService.CreateAsync(input);
 

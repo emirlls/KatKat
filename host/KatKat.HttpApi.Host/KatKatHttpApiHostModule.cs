@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duende.IdentityModel;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -9,10 +10,13 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using KatKat.EntityFrameworkCore;
 using KatKat.Hubs;
 using KatKat.MultiTenancy;
+using KatKat.RateLimiting;
+using KatKat.ResponseWrapping;
 using StackExchange.Redis;
 using Microsoft.OpenApi.Models;
 using Volo.Abp;
@@ -24,6 +28,7 @@ using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.Caching;
 using Volo.Abp.Caching.StackExchangeRedis;
+using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.PostgreSql;
 using Volo.Abp.Localization;
@@ -141,6 +146,14 @@ public class KatKatHttpApiHostModule : AbpModule
             options.KeyPrefix = "KatKat:";
         });
 
+        // AbpCachingStackExchangeRedisModule keeps its own internal multiplexer private (not
+        // exposed via DI), so the dynamic rate limiter needs its own registration to talk to
+        // Redis directly. Reuses the same "Redis:Configuration" connection string already used
+        // below for data-protection key storage.
+        context.Services.TryAddSingleton<IConnectionMultiplexer>(
+            _ => ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!));
+        context.Services.AddSingleton<IRateLimitStore, RedisRateLimitStore>();
+
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName(KatKatRemoteServiceConsts.RemoteServiceName);
         if (!hostingEnvironment.IsDevelopment())
         {
@@ -184,6 +197,11 @@ public class KatKatHttpApiHostModule : AbpModule
 
         app.UseHttpsRedirection();
         app.UseCorrelationId();
+        // Registered early (before routing/auth) so it wraps EVERY response for KatKat's own API
+        // routes - including 401/403/429 short-circuits - in the { message, success, status, data }
+        // envelope. Requests outside the API route prefix (Swagger, the SignalR hub, static
+        // assets) are left untouched by the middleware's own path check.
+        app.UseKatKatApiResponseWrapper();
         app.MapAbpStaticAssets();
         app.UseRouting();
         app.UseCors();
@@ -208,5 +226,16 @@ public class KatKatHttpApiHostModule : AbpModule
         {
             endpoints.MapHub<KatKatHub>(KatKatHubConsts.RoutePath);
         });
+    }
+
+    public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
+    {
+        await base.OnApplicationInitializationAsync(context);
+
+        // One-time bootstrap: seeds Turkey's 81 provinces into the City lookup table.
+        // CityDataSeedContributor is idempotent (no-op once the table is non-empty), so this is
+        // safe to run on every application start.
+        using var scope = context.ServiceProvider.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<IDataSeeder>().SeedAsync();
     }
 }
