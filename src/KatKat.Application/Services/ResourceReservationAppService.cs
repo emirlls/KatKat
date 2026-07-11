@@ -9,7 +9,6 @@ using KatKat.Entities;
 using KatKat.Hubs;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Volo.Abp;
 using Volo.Abp.Users;
@@ -47,7 +46,6 @@ public class ResourceReservationAppService : KatKatAppService, IResourceReservat
         return reservations.Select(r => ObjectMapper.Map<ResourceReservation, ResourceReservationDto>(r)).ToList();
     }
 
-    [Authorize(KatKatPermissions.ResourceReservations.Create)]
     public async Task<ResourceReservationDto> CreateAsync(CreateResourceReservationDto input)
     {
         var reservation = await _resourceReservationManager.CreateAsync(

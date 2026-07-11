@@ -22,13 +22,50 @@ public static class KatKatDbContextModelCreatingExtensions
             b.ConfigureByConvention();
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(ComplexConsts.MaxNameLength);
-            b.Property(x => x.City).IsRequired().HasMaxLength(ComplexConsts.MaxCityLength);
-            b.Property(x => x.District).IsRequired().HasMaxLength(ComplexConsts.MaxDistrictLength);
             b.Property(x => x.Address).HasMaxLength(ComplexConsts.MaxAddressLength);
             b.Property(x => x.Latitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
             b.Property(x => x.Longitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
 
+            b.HasOne<Neighborhood>().WithMany().HasForeignKey(x => x.NeighborhoodId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+
             b.HasIndex(x => new { x.TenantId, x.Name });
+        });
+
+        builder.Entity<City>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + CityConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(CityConsts.MaxNameLength);
+
+            b.HasIndex(x => x.Name).IsUnique();
+        });
+
+        builder.Entity<District>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + DistrictConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(DistrictConsts.MaxNameLength);
+
+            b.HasOne<City>().WithMany().HasForeignKey(x => x.CityId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+
+            b.HasIndex(x => new { x.CityId, x.Name }).IsUnique();
+        });
+
+        builder.Entity<Neighborhood>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + NeighborhoodConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(NeighborhoodConsts.MaxNameLength);
+
+            b.HasOne<District>().WithMany().HasForeignKey(x => x.DistrictId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+
+            b.HasIndex(x => new { x.DistrictId, x.Name }).IsUnique();
         });
 
         builder.Entity<Building>(b =>
@@ -104,8 +141,6 @@ public static class KatKatDbContextModelCreatingExtensions
             b.ConfigureByConvention();
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(ComplexConsts.MaxNameLength);
-            b.Property(x => x.City).IsRequired().HasMaxLength(ComplexConsts.MaxCityLength);
-            b.Property(x => x.District).IsRequired().HasMaxLength(ComplexConsts.MaxDistrictLength);
             b.Property(x => x.Latitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
             b.Property(x => x.Longitude).HasPrecision(GeoConsts.CoordinatePrecision, GeoConsts.CoordinateScale);
             b.Property(x => x.FinancialScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
@@ -113,8 +148,15 @@ public static class KatKatDbContextModelCreatingExtensions
             b.Property(x => x.ResolutionScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
             b.Property(x => x.TotalScore).HasPrecision(KatKatConsts.ScorePrecision, KatKatConsts.ScoreScale);
 
+            // Denormalized location FKs (see ComplexScore remarks) - Restrict, not Cascade, since
+            // City/District/Neighborhood are shared admin-managed reference data, not owned dependents.
+            b.HasOne<City>().WithMany().HasForeignKey(x => x.CityId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne<District>().WithMany().HasForeignKey(x => x.DistrictId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+            b.HasOne<Neighborhood>().WithMany().HasForeignKey(x => x.NeighborhoodId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+
             b.HasIndex(x => x.ComplexId).IsUnique();
-            b.HasIndex(x => new { x.District, x.TotalScore });
+            b.HasIndex(x => new { x.DistrictId, x.TotalScore });
+            b.HasIndex(x => new { x.DistrictId, x.NeighborhoodId, x.TotalScore });
             // Bounding-box prefilter index for the nearby (radius-based) leaderboard.
             b.HasIndex(x => new { x.Latitude, x.Longitude });
         });

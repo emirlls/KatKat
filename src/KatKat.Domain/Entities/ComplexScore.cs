@@ -21,9 +21,17 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
     /// </summary>
     public virtual string Name { get; protected set; } = null!;
 
-    public virtual string City { get; protected set; } = null!;
+    /// <summary>
+    /// Denormalized copy of the full City/District/Neighborhood hierarchy (unlike Complex, which
+    /// only stores the leaf NeighborhoodId) - this is deliberately flat so district/neighborhood
+    /// leaderboard queries never need a 3-table join, matching how Name/Latitude/Longitude are
+    /// already denormalized here for the same reason. Refreshed on every recalculation.
+    /// </summary>
+    public virtual int CityId { get; protected set; }
 
-    public virtual string District { get; protected set; } = null!;
+    public virtual int DistrictId { get; protected set; }
+
+    public virtual int NeighborhoodId { get; protected set; }
 
     /// <summary>Denormalized copy of Complex.Latitude/Longitude - powers the nearby leaderboard.</summary>
     public virtual decimal Latitude { get; protected set; }
@@ -50,8 +58,9 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
         Guid complexId,
         Guid tenantId,
         string name,
-        string city,
-        string district,
+        int cityId,
+        int districtId,
+        int neighborhoodId,
         decimal latitude,
         decimal longitude,
         decimal financialScore,
@@ -63,13 +72,14 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
     {
         ComplexId = complexId;
         TenantId = tenantId;
-        City = city;
-        District = district;
-        Update(name, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt);
+        Update(name, cityId, districtId, neighborhoodId, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt);
     }
 
     public void Update(
         string name,
+        int cityId,
+        int districtId,
+        int neighborhoodId,
         decimal latitude,
         decimal longitude,
         decimal financialScore,
@@ -79,6 +89,9 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
         DateTime calculatedAt)
     {
         Name = name;
+        CityId = cityId;
+        DistrictId = districtId;
+        NeighborhoodId = neighborhoodId;
         Latitude = latitude;
         Longitude = longitude;
         FinancialScore = financialScore;

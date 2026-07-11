@@ -20,4 +20,10 @@ public class EfCoreComplexRepository : KatKatEfCoreRepository<Complex, Guid>, IC
         var dbSet = await GetDbSetAsync();
         return await dbSet.AnyAsync(x => x.Name == name && (excludedId == null || x.Id != excludedId));
     }
+
+    public async Task<bool> ExistsForNeighborhoodAsync(int neighborhoodId)
+    {
+        var dbSet = await GetDbSetAsync();
+        return await dbSet.AnyAsync(x => x.NeighborhoodId == neighborhoodId);
+    }
 }

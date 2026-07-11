@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.Permissions;
+using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -14,6 +17,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/buildings")]
+[RateLimit]
 public class BuildingController : KatKatController, IBuildingAppService
 {
     private readonly IBuildingAppService _buildingAppService;
@@ -34,5 +38,6 @@ public class BuildingController : KatKatController, IBuildingAppService
 
     /// <summary>Creates a new Building in a Complex.</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.Buildings.Create)]
     public Task<BuildingDto> CreateAsync(CreateBuildingDto input) => _buildingAppService.CreateAsync(input);
 }

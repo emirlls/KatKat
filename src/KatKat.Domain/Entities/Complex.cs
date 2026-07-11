@@ -15,9 +15,11 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual string Name { get; protected set; } = null!;
 
-    public virtual string City { get; protected set; } = null!;
-
-    public virtual string District { get; protected set; } = null!;
+    /// <summary>
+    /// Leaf of the City -> District -> Neighborhood lookup hierarchy. City/District are derivable
+    /// through this Id, so only the leaf is stored here (normalized, single source of truth).
+    /// </summary>
+    public virtual int NeighborhoodId { get; protected set; }
 
     public virtual string? Address { get; protected set; }
 
@@ -38,8 +40,7 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Guid id,
         Guid tenantId,
         string name,
-        string city,
-        string district,
+        int neighborhoodId,
         string? address,
         decimal latitude,
         decimal longitude,
@@ -48,8 +49,7 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         TenantId = tenantId;
         SetName(name);
-        SetCity(city);
-        SetDistrict(district);
+        SetNeighborhood(neighborhoodId);
         SetAddress(address);
         SetLocation(latitude, longitude);
         SubscriptionStartDate = subscriptionStartDate;
@@ -60,14 +60,9 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Name = Check.NotNullOrWhiteSpace(name, nameof(name), ComplexConsts.MaxNameLength);
     }
 
-    public void SetCity(string city)
+    public void SetNeighborhood(int neighborhoodId)
     {
-        City = Check.NotNullOrWhiteSpace(city, nameof(city), ComplexConsts.MaxCityLength);
-    }
-
-    public void SetDistrict(string district)
-    {
-        District = Check.NotNullOrWhiteSpace(district, nameof(district), ComplexConsts.MaxDistrictLength);
+        NeighborhoodId = neighborhoodId;
     }
 
     public void SetAddress(string? address)

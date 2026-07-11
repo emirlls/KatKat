@@ -33,4 +33,10 @@ public interface IKatKatDbContext : IEfCoreDbContext
     DbSet<ResourceReservation> ResourceReservations { get; }
 
     DbSet<SosAlert> SosAlerts { get; }
+
+    DbSet<City> Cities { get; }
+
+    DbSet<District> Districts { get; }
+
+    DbSet<Neighborhood> Neighborhoods { get; }
 }

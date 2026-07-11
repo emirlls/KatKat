@@ -7,7 +7,6 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 
 namespace KatKat.Services;
 
@@ -34,7 +33,6 @@ public class FlatAppService : KatKatAppService, IFlatAppService
         return flats.Select(f => ObjectMapper.Map<Flat, FlatDto>(f)).ToList();
     }
 
-    [Authorize(KatKatPermissions.Flats.Create)]
     public async Task<FlatDto> CreateAsync(CreateFlatDto input)
     {
         var flat = await _flatManager.CreateAsync(input.BuildingId, input.FlatNumber, input.FloorNumber, input.ShareFactor);

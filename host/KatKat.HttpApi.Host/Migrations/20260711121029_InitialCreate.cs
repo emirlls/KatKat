@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -119,17 +120,12 @@ namespace KatKat.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "KatKatComplexes",
+                name: "KatKatCities",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    City = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    District = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    Address = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
-                    SubscriptionStartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    SubscriptionEndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     ExtraProperties = table.Column<string>(type: "text", nullable: false),
                     ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -142,37 +138,7 @@ namespace KatKat.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_KatKatComplexes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "KatKatComplexScores",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ComplexId = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    City = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    District = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
-                    FinancialScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
-                    SocialScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
-                    ResolutionScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
-                    TotalScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
-                    CalculatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
-                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
-                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
-                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
-                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_KatKatComplexScores", x => x.Id);
+                    table.PrimaryKey("PK_KatKatCities", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -301,6 +267,149 @@ namespace KatKat.Migrations
                         principalTable: "AbpTenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KatKatDistricts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CityId = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KatKatDistricts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KatKatDistricts_KatKatCities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "KatKatCities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KatKatNeighborhoods",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    DistrictId = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KatKatNeighborhoods", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KatKatNeighborhoods_KatKatDistricts_DistrictId",
+                        column: x => x.DistrictId,
+                        principalTable: "KatKatDistricts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KatKatComplexes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    NeighborhoodId = table.Column<int>(type: "integer", nullable: false),
+                    Address = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    Latitude = table.Column<decimal>(type: "numeric(9,6)", precision: 9, scale: 6, nullable: false),
+                    Longitude = table.Column<decimal>(type: "numeric(9,6)", precision: 9, scale: 6, nullable: false),
+                    SubscriptionStartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    SubscriptionEndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KatKatComplexes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KatKatComplexes_KatKatNeighborhoods_NeighborhoodId",
+                        column: x => x.NeighborhoodId,
+                        principalTable: "KatKatNeighborhoods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "KatKatComplexScores",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ComplexId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    CityId = table.Column<int>(type: "integer", nullable: false),
+                    DistrictId = table.Column<int>(type: "integer", nullable: false),
+                    NeighborhoodId = table.Column<int>(type: "integer", nullable: false),
+                    Latitude = table.Column<decimal>(type: "numeric(9,6)", precision: 9, scale: 6, nullable: false),
+                    Longitude = table.Column<decimal>(type: "numeric(9,6)", precision: 9, scale: 6, nullable: false),
+                    FinancialScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
+                    SocialScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
+                    ResolutionScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
+                    TotalScore = table.Column<decimal>(type: "numeric(5,2)", precision: 5, scale: 2, nullable: false),
+                    CalculatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "text", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uuid", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uuid", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeleterId = table.Column<Guid>(type: "uuid", nullable: true),
+                    DeletionTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KatKatComplexScores", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_KatKatComplexScores_KatKatCities_CityId",
+                        column: x => x.CityId,
+                        principalTable: "KatKatCities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KatKatComplexScores_KatKatDistricts_DistrictId",
+                        column: x => x.DistrictId,
+                        principalTable: "KatKatDistricts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_KatKatComplexScores_KatKatNeighborhoods_NeighborhoodId",
+                        column: x => x.NeighborhoodId,
+                        principalTable: "KatKatNeighborhoods",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -578,9 +687,25 @@ namespace KatKat.Migrations
                 columns: new[] { "ComplexId", "Name" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_KatKatCities_Name",
+                table: "KatKatCities",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatComplexes_NeighborhoodId",
+                table: "KatKatComplexes",
+                column: "NeighborhoodId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_KatKatComplexes_TenantId_Name",
                 table: "KatKatComplexes",
                 columns: new[] { "TenantId", "Name" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatComplexScores_CityId",
+                table: "KatKatComplexScores",
+                column: "CityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_KatKatComplexScores_ComplexId",
@@ -589,9 +714,30 @@ namespace KatKat.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_KatKatComplexScores_District_TotalScore",
+                name: "IX_KatKatComplexScores_DistrictId_NeighborhoodId_TotalScore",
                 table: "KatKatComplexScores",
-                columns: new[] { "District", "TotalScore" });
+                columns: new[] { "DistrictId", "NeighborhoodId", "TotalScore" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatComplexScores_DistrictId_TotalScore",
+                table: "KatKatComplexScores",
+                columns: new[] { "DistrictId", "TotalScore" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatComplexScores_Latitude_Longitude",
+                table: "KatKatComplexScores",
+                columns: new[] { "Latitude", "Longitude" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatComplexScores_NeighborhoodId",
+                table: "KatKatComplexScores",
+                column: "NeighborhoodId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatDistricts_CityId_Name",
+                table: "KatKatDistricts",
+                columns: new[] { "CityId", "Name" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_KatKatExpenses_ComplexId_IssuedAt",
@@ -633,6 +779,12 @@ namespace KatKat.Migrations
                 name: "IX_KatKatIssues_ReporterUserId",
                 table: "KatKatIssues",
                 column: "ReporterUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_KatKatNeighborhoods_DistrictId_Name",
+                table: "KatKatNeighborhoods",
+                columns: new[] { "DistrictId", "Name" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_KatKatP2PRequests_ComplexId_Status",
@@ -733,6 +885,15 @@ namespace KatKat.Migrations
 
             migrationBuilder.DropTable(
                 name: "KatKatComplexes");
+
+            migrationBuilder.DropTable(
+                name: "KatKatNeighborhoods");
+
+            migrationBuilder.DropTable(
+                name: "KatKatDistricts");
+
+            migrationBuilder.DropTable(
+                name: "KatKatCities");
         }
     }
 }

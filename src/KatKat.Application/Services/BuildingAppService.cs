@@ -7,7 +7,6 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 
 namespace KatKat.Services;
 
@@ -34,7 +33,6 @@ public class BuildingAppService : KatKatAppService, IBuildingAppService
         return buildings.Select(b => ObjectMapper.Map<Building, BuildingDto>(b)).ToList();
     }
 
-    [Authorize(KatKatPermissions.Buildings.Create)]
     public async Task<BuildingDto> CreateAsync(CreateBuildingDto input)
     {
         var building = await _buildingManager.CreateAsync(input.ComplexId, input.Name, input.FloorCount);

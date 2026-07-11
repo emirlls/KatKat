@@ -42,6 +42,21 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var sosAlerts = myGroup.AddPermission(KatKatPermissions.SosAlerts.Default, L("Permission:SosAlerts"));
         sosAlerts.AddChild(KatKatPermissions.SosAlerts.Resolve, L("Permission:SosAlerts.Resolve"));
+
+        var cities = myGroup.AddPermission(KatKatPermissions.Cities.Default, L("Permission:Cities"));
+        cities.AddChild(KatKatPermissions.Cities.Create, L("Permission:Cities.Create"));
+        cities.AddChild(KatKatPermissions.Cities.Update, L("Permission:Cities.Update"));
+        cities.AddChild(KatKatPermissions.Cities.Delete, L("Permission:Cities.Delete"));
+
+        var districts = myGroup.AddPermission(KatKatPermissions.Districts.Default, L("Permission:Districts"));
+        districts.AddChild(KatKatPermissions.Districts.Create, L("Permission:Districts.Create"));
+        districts.AddChild(KatKatPermissions.Districts.Update, L("Permission:Districts.Update"));
+        districts.AddChild(KatKatPermissions.Districts.Delete, L("Permission:Districts.Delete"));
+
+        var neighborhoods = myGroup.AddPermission(KatKatPermissions.Neighborhoods.Default, L("Permission:Neighborhoods"));
+        neighborhoods.AddChild(KatKatPermissions.Neighborhoods.Create, L("Permission:Neighborhoods.Create"));
+        neighborhoods.AddChild(KatKatPermissions.Neighborhoods.Update, L("Permission:Neighborhoods.Update"));
+        neighborhoods.AddChild(KatKatPermissions.Neighborhoods.Delete, L("Permission:Neighborhoods.Delete"));
     }
 
     private static LocalizableString L(string name)

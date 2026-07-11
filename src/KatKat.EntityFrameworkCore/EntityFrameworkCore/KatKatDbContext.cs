@@ -34,6 +34,12 @@ public class KatKatDbContext : AbpDbContext<KatKatDbContext>, IKatKatDbContext
 
     public DbSet<SosAlert> SosAlerts { get; set; } = null!;
 
+    public DbSet<City> Cities { get; set; } = null!;
+
+    public DbSet<District> Districts { get; set; } = null!;
+
+    public DbSet<Neighborhood> Neighborhoods { get; set; } = null!;
+
     public KatKatDbContext(DbContextOptions<KatKatDbContext> options)
         : base(options)
     {

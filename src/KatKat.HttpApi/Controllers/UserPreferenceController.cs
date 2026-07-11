@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using KatKat.Dtos;
+using KatKat.RateLimiting;
 using KatKat.Services;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
@@ -12,6 +13,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/my-preference")]
+[RateLimit]
 public class UserPreferenceController : KatKatController, IUserPreferenceAppService
 {
     private readonly IUserPreferenceAppService _userPreferenceAppService;

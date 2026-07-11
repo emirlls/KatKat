@@ -1,4 +1,5 @@
 using System;
+using KatKat.Dtos.Common;
 using Volo.Abp.Application.Dtos;
 
 namespace KatKat.Dtos;
@@ -7,9 +8,11 @@ public class ComplexDto : FullAuditedEntityDto<Guid>
 {
     public string Name { get; set; } = null!;
 
-    public string City { get; set; } = null!;
+    public LookupDto City { get; set; } = null!;
 
-    public string District { get; set; } = null!;
+    public LookupDto District { get; set; } = null!;
+
+    public LookupDto Neighborhood { get; set; } = null!;
 
     public string? Address { get; set; }
 

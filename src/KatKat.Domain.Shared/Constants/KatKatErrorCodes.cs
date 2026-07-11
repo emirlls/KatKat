@@ -47,4 +47,15 @@ public static class KatKatErrorCodes
 
     // SosAlert (09xxxx)
     public const string SosAlertMustBeHelpNeededToResolve = Prefix + "090001";
+
+    // Leaderboard (10xxxx)
+    public const string NearbyLeaderboardRadiusMustBePositive = Prefix + "100001";
+
+    // Location: City / District / Neighborhood (11xxxx)
+    public const string CityNameAlreadyExists = Prefix + "110001";
+    public const string DistrictNameAlreadyExistsInCity = Prefix + "110002";
+    public const string NeighborhoodNameAlreadyExistsInDistrict = Prefix + "110003";
+    public const string CityHasDistrictsCannotBeDeleted = Prefix + "110004";
+    public const string DistrictHasNeighborhoodsCannotBeDeleted = Prefix + "110005";
+    public const string NeighborhoodInUseByComplexCannotBeDeleted = Prefix + "110006";
 }

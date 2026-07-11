@@ -7,7 +7,6 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
-using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Users;
 
@@ -45,7 +44,6 @@ public class FlatMemberAppService : KatKatAppService, IFlatMemberAppService
         return ObjectMapper.Map<FlatMember, FlatMemberDto>(flatMember);
     }
 
-    [Authorize(KatKatPermissions.FlatMembers.Approve)]
     public async Task<FlatMemberDto> ApproveAsync(Guid id)
     {
         var flatMember = await _flatMemberRepository.GetAsync(id);
@@ -57,7 +55,6 @@ public class FlatMemberAppService : KatKatAppService, IFlatMemberAppService
         return ObjectMapper.Map<FlatMember, FlatMemberDto>(flatMember);
     }
 
-    [Authorize(KatKatPermissions.FlatMembers.PromoteToManager)]
     public async Task<FlatMemberDto> PromoteToManagerAsync(Guid id)
     {
         var flatMember = await _flatMemberRepository.GetAsync(id);

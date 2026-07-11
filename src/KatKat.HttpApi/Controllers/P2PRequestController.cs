@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
 using KatKat.P2PRequests;
+using KatKat.RateLimiting;
 using KatKat.Services;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
@@ -15,6 +16,7 @@ namespace KatKat.Controllers;
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
 [Route(KatKatRemoteServiceConsts.RoutePathPrefix + "/p2p-requests")]
+[RateLimit]
 public class P2PRequestController : KatKatController, IP2PRequestAppService
 {
     private readonly IP2PRequestAppService _p2pRequestAppService;

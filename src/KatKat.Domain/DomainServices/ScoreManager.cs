@@ -19,8 +19,14 @@ public class ScoreManager : DomainService
 
     public const int DefaultFulfillmentsForMaxScore = 20;
 
+    /// <summary>Floor of every normalized 0-100 sub-score (Financial/Social/Resolution).</summary>
+    public const decimal MinScore = 0m;
+
+    /// <summary>Ceiling of every normalized 0-100 sub-score (Financial/Social/Resolution).</summary>
+    public const decimal MaxScore = 100m;
+
     /// <summary>Score used when there is no data yet to judge by (new Complex) - assume healthy.</summary>
-    public const decimal DefaultScoreWhenNoData = 100m;
+    public const decimal DefaultScoreWhenNoData = MaxScore;
 
     /// <summary>Points deducted per day an expense share is paid late, floored at 0.</summary>
     public const decimal FinancialScorePenaltyPerDelayDay = 10m;
@@ -32,17 +38,20 @@ public class ScoreManager : DomainService
     private readonly IP2PRequestRepository _p2pRequestRepository;
     private readonly IExpenseShareRepository _expenseShareRepository;
     private readonly IIssueRepository _issueRepository;
+    private readonly LocationHierarchyResolver _locationHierarchyResolver;
 
     public ScoreManager(
         IComplexScoreRepository complexScoreRepository,
         IP2PRequestRepository p2pRequestRepository,
         IExpenseShareRepository expenseShareRepository,
-        IIssueRepository issueRepository)
+        IIssueRepository issueRepository,
+        LocationHierarchyResolver locationHierarchyResolver)
     {
         _complexScoreRepository = complexScoreRepository;
         _p2pRequestRepository = p2pRequestRepository;
         _expenseShareRepository = expenseShareRepository;
         _issueRepository = issueRepository;
+        _locationHierarchyResolver = locationHierarchyResolver;
     }
 
     public virtual decimal CalculateComposite(decimal financialScore, decimal socialScore, decimal resolutionScore)
@@ -58,7 +67,7 @@ public class ScoreManager : DomainService
         Guid complexId, DateTime since, int fulfillmentsForMaxScore = DefaultFulfillmentsForMaxScore)
     {
         var fulfilledCount = await _p2pRequestRepository.GetFulfilledCountAsync(complexId, since);
-        return Math.Min(100m, fulfilledCount * (100m / fulfillmentsForMaxScore));
+        return Math.Min(MaxScore, fulfilledCount * (MaxScore / fulfillmentsForMaxScore));
     }
 
     /// <summary>
@@ -73,7 +82,7 @@ public class ScoreManager : DomainService
             return DefaultScoreWhenNoData;
         }
 
-        return Math.Max(0m, 100m - (averageDelayDays.Value * FinancialScorePenaltyPerDelayDay));
+        return Math.Max(MinScore, MaxScore - (averageDelayDays.Value * FinancialScorePenaltyPerDelayDay));
     }
 
     /// <summary>
@@ -88,28 +97,28 @@ public class ScoreManager : DomainService
             return DefaultScoreWhenNoData;
         }
 
-        return Math.Max(0m, 100m - (averageResolutionHours.Value * ResolutionScorePenaltyPerDelayHour));
+        return Math.Max(MinScore, MaxScore - (averageResolutionHours.Value * ResolutionScorePenaltyPerDelayHour));
     }
 
     public virtual async Task<ComplexScore> UpsertAsync(
         Guid complexId,
         Guid tenantId,
         string name,
-        string city,
-        string district,
+        int neighborhoodId,
         decimal latitude,
         decimal longitude,
         decimal financialScore,
         decimal socialScore,
         decimal resolutionScore)
     {
+        var (cityId, districtId, resolvedNeighborhoodId) = await _locationHierarchyResolver.ResolveAsync(neighborhoodId);
         var totalScore = CalculateComposite(financialScore, socialScore, resolutionScore);
         var calculatedAt = DateTime.UtcNow;
 
         var existing = await _complexScoreRepository.FindByComplexIdAsync(complexId);
         if (existing != null)
         {
-            existing.Update(name, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt);
+            existing.Update(name, cityId, districtId, resolvedNeighborhoodId, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt);
             return await _complexScoreRepository.UpdateAsync(existing);
         }
 
@@ -118,8 +127,9 @@ public class ScoreManager : DomainService
             complexId,
             tenantId,
             name,
-            city,
-            district,
+            cityId,
+            districtId,
+            resolvedNeighborhoodId,
             latitude,
             longitude,
             financialScore,
