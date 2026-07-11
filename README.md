@@ -2,6 +2,9 @@
 
 **KatKat** is a next-generation, cloud-native B2B2C SaaS backend ecosystem engineered to transform traditional, rigid property management platforms into a dynamic, gamified community experience. Moving beyond mere accounting tools, KatKat bridges official estate administration with real-time neighborhood solidarity and social gamification.
 
+### 🤖 AI-Collaborative Engineering
+This project is fully designed and co-architected in collaboration with **Claude AI**. By combining human domain expertise with AI-driven architectural design patterns, the codebase adheres to production-grade enterprise practices from day one.
+
 The system is built on top of **ABP Framework** and **.NET 10 (C# 14)** using strict **Domain-Driven Design (DDD)** principles and robust multi-tenant data isolation.
 
 ---
