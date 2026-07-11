@@ -17,6 +17,10 @@ public class ScoreManager : DomainService
     public const decimal SocialWeight = 0.35m;
     public const decimal ResolutionWeight = 0.25m;
 
+    /// <summary>How far back Financial/Social/Resolution scores look when recalculating - both the
+    /// nightly worker and the manual recalculate-now endpoint use the same window.</summary>
+    public const int TrailingWindowDays = 30;
+
     public const int DefaultFulfillmentsForMaxScore = 20;
 
     /// <summary>Floor of every normalized 0-100 sub-score (Financial/Social/Resolution).</summary>
@@ -102,7 +106,7 @@ public class ScoreManager : DomainService
 
     public virtual async Task<ComplexScore> UpsertAsync(
         Guid complexId,
-        Guid tenantId,
+        Guid? tenantId,
         string name,
         int neighborhoodId,
         decimal latitude,
@@ -139,6 +143,22 @@ public class ScoreManager : DomainService
             calculatedAt
         );
 
-        return await _complexScoreRepository.InsertAsync(complexScore);
+        return await _complexScoreRepository.InsertAsync(complexScore, autoSave: true);
+    }
+
+    /// <summary>
+    /// Calculates and upserts one Complex's KatKat Score. Shared by the nightly
+    /// ScoreCalculationWorker and the manual "recalculate now" endpoint so the scoring logic
+    /// itself lives in exactly one place.
+    /// </summary>
+    public virtual async Task<ComplexScore> RecalculateAsync(Complex complex, DateTime since)
+    {
+        var financialScore = await CalculateFinancialScoreAsync(complex.Id, since);
+        var socialScore = await CalculateSocialScoreAsync(complex.Id, since);
+        var resolutionScore = await CalculateResolutionScoreAsync(complex.Id, since);
+
+        return await UpsertAsync(
+            complex.Id, complex.TenantId, complex.Name, complex.NeighborhoodId,
+            complex.Latitude, complex.Longitude, financialScore, socialScore, resolutionScore);
     }
 }

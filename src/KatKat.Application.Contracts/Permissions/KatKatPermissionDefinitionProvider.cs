@@ -13,12 +13,15 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
         var complexes = myGroup.AddPermission(KatKatPermissions.Complexes.Default, L("Permission:Complexes"));
         complexes.AddChild(KatKatPermissions.Complexes.Create, L("Permission:Complexes.Create"));
         complexes.AddChild(KatKatPermissions.Complexes.Update, L("Permission:Complexes.Update"));
+        complexes.AddChild(KatKatPermissions.Complexes.Delete, L("Permission:Complexes.Delete"));
 
         var buildings = myGroup.AddPermission(KatKatPermissions.Buildings.Default, L("Permission:Buildings"));
         buildings.AddChild(KatKatPermissions.Buildings.Create, L("Permission:Buildings.Create"));
 
         var flats = myGroup.AddPermission(KatKatPermissions.Flats.Default, L("Permission:Flats"));
         flats.AddChild(KatKatPermissions.Flats.Create, L("Permission:Flats.Create"));
+        flats.AddChild(KatKatPermissions.Flats.Update, L("Permission:Flats.Update"));
+        flats.AddChild(KatKatPermissions.Flats.Delete, L("Permission:Flats.Delete"));
 
         var flatMembers = myGroup.AddPermission(KatKatPermissions.FlatMembers.Default, L("Permission:FlatMembers"));
         flatMembers.AddChild(KatKatPermissions.FlatMembers.Approve, L("Permission:FlatMembers.Approve"));

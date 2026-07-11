@@ -48,6 +48,11 @@ public class Flat : FullAuditedAggregateRoot<Guid>, IMultiTenant
         FlatNumber = Check.NotNullOrWhiteSpace(flatNumber, nameof(flatNumber), FlatConsts.MaxFlatNumberLength);
     }
 
+    public void SetFloorNumber(int? floorNumber)
+    {
+        FloorNumber = floorNumber;
+    }
+
     public void SetShareFactor(decimal shareFactor)
     {
         if (shareFactor <= 0)

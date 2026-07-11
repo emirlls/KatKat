@@ -45,7 +45,7 @@ public class P2PRequestAppService : KatKatAppService, IP2PRequestAppService
         var request = await _p2pRequestManager.CreateAsync(
             input.ComplexId, CurrentUser.GetId(), input.Title, input.Description, input.NeededUntil);
 
-        await _p2pRequestRepository.InsertAsync(request);
+        await _p2pRequestRepository.InsertAsync(request, autoSave: true);
 
         var dto = ObjectMapper.Map<P2PRequest, P2PRequestDto>(request);
 

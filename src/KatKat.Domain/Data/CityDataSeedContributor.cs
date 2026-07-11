@@ -46,7 +46,7 @@ public class CityDataSeedContributor : IDataSeedContributor, ITransientDependenc
 
         foreach (var province in Provinces)
         {
-            await _cityRepository.InsertAsync(await _cityManager.CreateAsync(province));
+            await _cityRepository.InsertAsync(await _cityManager.CreateAsync(province), autoSave: true);
         }
     }
 }

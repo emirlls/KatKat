@@ -13,4 +13,8 @@ public interface IFlatAppService : IApplicationService
     Task<List<FlatDto>> GetListByBuildingAsync(Guid buildingId);
 
     Task<FlatDto> CreateAsync(CreateFlatDto input);
+
+    Task<FlatDto> UpdateAsync(Guid id, UpdateFlatDto input);
+
+    Task DeleteAsync(Guid id);
 }

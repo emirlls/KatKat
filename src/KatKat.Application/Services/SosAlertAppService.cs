@@ -16,12 +16,16 @@ namespace KatKat.Services;
 public class SosAlertAppService : KatKatAppService, ISosAlertAppService
 {
     private readonly ISosAlertRepository _sosAlertRepository;
+    private readonly IFlatRepository _flatRepository;
     private readonly SosAlertManager _sosAlertManager;
     private readonly IHubContext<KatKatHub> _hubContext;
 
-    public SosAlertAppService(ISosAlertRepository sosAlertRepository, SosAlertManager sosAlertManager, IHubContext<KatKatHub> hubContext)
+    public SosAlertAppService(
+        ISosAlertRepository sosAlertRepository, IFlatRepository flatRepository,
+        SosAlertManager sosAlertManager, IHubContext<KatKatHub> hubContext)
     {
         _sosAlertRepository = sosAlertRepository;
+        _flatRepository = flatRepository;
         _sosAlertManager = sosAlertManager;
         _hubContext = hubContext;
     }
@@ -34,9 +38,9 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
     {
         var alert = await _sosAlertManager.ReportAsync(input.ComplexId, input.FlatId, CurrentUser.GetId(), input.Status);
 
-        await _sosAlertRepository.InsertAsync(alert);
+        await _sosAlertRepository.InsertAsync(alert, autoSave: true);
 
-        var dto = ObjectMapper.Map<SosAlert, SosAlertDto>(alert);
+        var dto = await MapToDtoAsync(alert);
 
         await _hubContext.Clients
             .Group(KatKatHub.GroupName(alert.ComplexId))
@@ -48,7 +52,7 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
     public async Task<List<SosAlertDto>> GetActiveByComplexAsync(Guid complexId)
     {
         var alerts = await _sosAlertRepository.GetLatestStatusByComplexAsync(complexId);
-        return alerts.Select(a => ObjectMapper.Map<SosAlert, SosAlertDto>(a)).ToList();
+        return await MapToDtosAsync(alerts);
     }
 
     public async Task<SosAlertDto> ResolveAsync(Guid id)
@@ -59,12 +63,36 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
 
         await _sosAlertRepository.UpdateAsync(alert);
 
-        var dto = ObjectMapper.Map<SosAlert, SosAlertDto>(alert);
+        var dto = await MapToDtoAsync(alert);
 
         await _hubContext.Clients
             .Group(KatKatHub.GroupName(alert.ComplexId))
             .SendAsync(KatKatHubConsts.EventNames.SosAlertResolved, dto);
 
         return dto;
+    }
+
+    private async Task<SosAlertDto> MapToDtoAsync(SosAlert alert)
+    {
+        return (await MapToDtosAsync(new List<SosAlert> { alert }))[0];
+    }
+
+    /// <summary>Batches the Flat -> FlatNumber lookup for a whole list, avoiding N+1 queries.</summary>
+    private async Task<List<SosAlertDto>> MapToDtosAsync(List<SosAlert> alerts)
+    {
+        if (alerts.Count == 0)
+        {
+            return new List<SosAlertDto>();
+        }
+
+        var flats = await _flatRepository.GetListByIdsAsync(alerts.Select(a => a.FlatId).Distinct());
+        var flatNumberById = flats.ToDictionary(f => f.Id, f => f.FlatNumber);
+
+        return alerts.Select(alert =>
+        {
+            var dto = ObjectMapper.Map<SosAlert, SosAlertDto>(alert);
+            dto.FlatNumber = flatNumberById.GetValueOrDefault(alert.FlatId, alert.FlatId.ToString());
+            return dto;
+        }).ToList();
     }
 }

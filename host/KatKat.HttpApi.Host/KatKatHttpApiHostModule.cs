@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using OpenIddict.Server;
 using KatKat.EntityFrameworkCore;
 using KatKat.Hubs;
 using KatKat.MultiTenancy;
@@ -31,10 +33,15 @@ using Volo.Abp.Caching.StackExchangeRedis;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.PostgreSql;
+using Volo.Abp.Identity.AspNetCore;
+using Volo.Abp.Identity.EntityFrameworkCore;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.OpenIddict;
+using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
+using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.Swashbuckle;
@@ -53,13 +60,32 @@ namespace KatKat;
     typeof(AbpCachingStackExchangeRedisModule),
     typeof(AbpEntityFrameworkCorePostgreSqlModule),
     typeof(AbpPermissionManagementEntityFrameworkCoreModule),
+    typeof(AbpPermissionManagementDomainIdentityModule),
     typeof(AbpSettingManagementEntityFrameworkCoreModule),
     typeof(AbpTenantManagementEntityFrameworkCoreModule),
+    typeof(AbpIdentityEntityFrameworkCoreModule),
+    typeof(AbpIdentityAspNetCoreModule),
+    typeof(AbpOpenIddictEntityFrameworkCoreModule),
+    typeof(AbpOpenIddictAspNetCoreModule),
     typeof(AbpAspNetCoreSerilogModule),
     typeof(AbpSwashbuckleModule)
     )]
 public class KatKatHttpApiHostModule : AbpModule
 {
+    public override void PreConfigureServices(ServiceConfigurationContext context)
+    {
+        // The Docker Compose setup deliberately serves plain HTTP (see docker-compose.yml) to
+        // avoid dealing with dev-certificate trust inside containers; OpenIddict otherwise
+        // rejects every token request over HTTP. The regular local-dev flow (dotnet run, HTTPS
+        // via Kestrel dev-certs) keeps the default transport-security requirement.
+        if (context.Services.GetHostingEnvironment().IsEnvironment("Docker"))
+        {
+            PreConfigure<OpenIddictServerBuilder>(builder =>
+            {
+                builder.UseAspNetCore().DisableTransportSecurityRequirement();
+            });
+        }
+    }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -139,6 +165,12 @@ public class KatKatHttpApiHostModule : AbpModule
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
                 options.Audience = KatKatRemoteServiceConsts.RemoteServiceName;
+
+                // Without this, the JWT bearer handler remaps short claim names ("sub", "role")
+                // to their long legacy URIs (ClaimTypes.NameIdentifier/Role) by default, which no
+                // longer match AbpClaimTypes.UserId/Role ("sub"/"role") - breaking CurrentUser and
+                // every permission check for every authenticated request.
+                options.MapInboundClaims = false;
             });
 
         Configure<AbpDistributedCacheOptions>(options =>
@@ -232,10 +264,26 @@ public class KatKatHttpApiHostModule : AbpModule
     {
         await base.OnApplicationInitializationAsync(context);
 
+        using var scope = context.ServiceProvider.CreateScope();
+
+        // Applies pending migrations on every startup so a fresh `docker compose up` (or a
+        // fresh local Postgres) ends up with an up-to-date schema without a separate manual
+        // `dotnet ef database update` step. Idempotent - a no-op once the schema is current.
+        await MigrateDatabaseAsync(scope.ServiceProvider.GetRequiredService<IConfiguration>());
+
         // One-time bootstrap: seeds Turkey's 81 provinces into the City lookup table.
         // CityDataSeedContributor is idempotent (no-op once the table is non-empty), so this is
         // safe to run on every application start.
-        using var scope = context.ServiceProvider.CreateScope();
         await scope.ServiceProvider.GetRequiredService<IDataSeeder>().SeedAsync();
+    }
+
+    private static async Task MigrateDatabaseAsync(IConfiguration configuration)
+    {
+        var options = new DbContextOptionsBuilder<KatKatHttpApiHostMigrationsDbContext>()
+            .UseNpgsql(configuration.GetConnectionString(KatKatDbProperties.ConnectionStringName))
+            .Options;
+
+        await using var migrationsDbContext = new KatKatHttpApiHostMigrationsDbContext(options);
+        await migrationsDbContext.Database.MigrateAsync();
     }
 }

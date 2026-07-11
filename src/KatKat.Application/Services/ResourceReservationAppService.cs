@@ -51,7 +51,7 @@ public class ResourceReservationAppService : KatKatAppService, IResourceReservat
         var reservation = await _resourceReservationManager.CreateAsync(
             input.ResourceId, CurrentUser.GetId(), input.StartTime, input.EndTime);
 
-        await _resourceReservationRepository.InsertAsync(reservation);
+        await _resourceReservationRepository.InsertAsync(reservation, autoSave: true);
 
         var dto = ObjectMapper.Map<ResourceReservation, ResourceReservationDto>(reservation);
 

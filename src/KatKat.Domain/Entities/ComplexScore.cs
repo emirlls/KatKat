@@ -8,12 +8,13 @@ namespace KatKat.Entities;
 /// IMultiTenant: the district/city leaderboard is an inherently cross-tenant read (KVKK
 /// privacy shield), and this table only ever holds aggregated numbers - never raw member,
 /// expense, or complaint data - so there is nothing tenant-sensitive to leak by not filtering it.
+/// TenantId is nullable to match Complex.TenantId (host-owned when multi-tenancy is disabled).
 /// </summary>
 public class ComplexScore : FullAuditedAggregateRoot<Guid>
 {
     public virtual Guid ComplexId { get; protected set; }
 
-    public virtual Guid TenantId { get; protected set; }
+    public virtual Guid? TenantId { get; protected set; }
 
     /// <summary>
     /// Denormalized copy of Complex.Name, refreshed on every recalculation - needed so the
@@ -56,7 +57,7 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
     internal ComplexScore(
         Guid id,
         Guid complexId,
-        Guid tenantId,
+        Guid? tenantId,
         string name,
         int cityId,
         int districtId,

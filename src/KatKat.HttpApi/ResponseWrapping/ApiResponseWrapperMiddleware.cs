@@ -52,11 +52,29 @@ public class ApiResponseWrapperMiddleware
             context.Response.Body = originalBody;
         }
 
+        // Responses that must never carry a body (CORS preflight short-circuits to 204, etc.)
+        // are passed through untouched - writing an envelope on top of them violates HTTP
+        // semantics and Kestrel rejects it.
+        if (IsBodyForbidden(context))
+        {
+            return;
+        }
+
         var envelopeJson = BuildEnvelopeJson(context, buffer, localizer);
 
         context.Response.ContentType = "application/json; charset=utf-8";
         context.Response.ContentLength = Encoding.UTF8.GetByteCount(envelopeJson);
         await context.Response.WriteAsync(envelopeJson);
+    }
+
+    private static bool IsBodyForbidden(HttpContext context)
+    {
+        if (HttpMethods.IsHead(context.Request.Method))
+        {
+            return true;
+        }
+
+        return context.Response.StatusCode is StatusCodes.Status204NoContent or StatusCodes.Status304NotModified;
     }
 
     private static string BuildEnvelopeJson(HttpContext context, MemoryStream buffer, IStringLocalizer<KatKatResource> localizer)
@@ -66,7 +84,7 @@ public class ApiResponseWrapperMiddleware
 
         var message = isSuccess
             ? localizer[ApiResponseConsts.DefaultSuccessMessageKey].Value
-            : localizer[ApiResponseConsts.DefaultErrorMessageKey].Value;
+            : localizer[GetDefaultErrorMessageKey(statusCode)].Value;
         object? data = null;
 
         if (buffer.Length > 0)
@@ -106,4 +124,18 @@ public class ApiResponseWrapperMiddleware
 
         return JsonSerializer.Serialize(envelope, SerializerOptions);
     }
+
+    /// <summary>
+    /// Picks a status-code-specific fallback message when the response carries no body of its own
+    /// (401/403 from ASP.NET Core's own auth short-circuits, 429 from RateLimitFilter, a plain
+    /// routing 404) - otherwise every one of these read as the same unhelpful generic error text.
+    /// </summary>
+    private static string GetDefaultErrorMessageKey(int statusCode) => statusCode switch
+    {
+        StatusCodes.Status401Unauthorized => ApiResponseConsts.UnauthorizedMessageKey,
+        StatusCodes.Status403Forbidden => ApiResponseConsts.ForbiddenMessageKey,
+        StatusCodes.Status404NotFound => ApiResponseConsts.NotFoundMessageKey,
+        StatusCodes.Status429TooManyRequests => ApiResponseConsts.RateLimitExceededMessageKey,
+        _ => ApiResponseConsts.DefaultErrorMessageKey,
+    };
 }

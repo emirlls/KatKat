@@ -39,7 +39,7 @@ public class FlatMemberAppService : KatKatAppService, IFlatMemberAppService
     {
         var flatMember = await _flatMemberManager.InviteAsync(input.FlatId, CurrentUser.GetId());
 
-        await _flatMemberRepository.InsertAsync(flatMember);
+        await _flatMemberRepository.InsertAsync(flatMember, autoSave: true);
 
         return ObjectMapper.Map<FlatMember, FlatMemberDto>(flatMember);
     }

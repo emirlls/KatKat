@@ -37,7 +37,7 @@ public class BuildingAppService : KatKatAppService, IBuildingAppService
     {
         var building = await _buildingManager.CreateAsync(input.ComplexId, input.Name, input.FloorCount);
 
-        await _buildingRepository.InsertAsync(building);
+        await _buildingRepository.InsertAsync(building, autoSave: true);
 
         return ObjectMapper.Map<Building, BuildingDto>(building);
     }

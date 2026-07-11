@@ -2,7 +2,6 @@
   "culture": "en",
   "texts": {
     "MyAccount":  "My account",
-    "KatKat:010001": "A complex can only be created inside a tenant scope.",
     "KatKat:010002": "A complex with the name '{name}' already exists.",
     "KatKat:010003": "The new subscription end date must be later than the current one.",
     "KatKat:010004": "Latitude must be between {minLatitude} and {maxLatitude}.",
@@ -39,10 +38,13 @@
     "Permission:Complexes": "Complexes",
     "Permission:Complexes.Create": "Create Complexes",
     "Permission:Complexes.Update": "Edit Complexes",
+    "Permission:Complexes.Delete": "Delete Complexes",
     "Permission:Buildings": "Buildings",
     "Permission:Buildings.Create": "Create Buildings",
     "Permission:Flats": "Flats",
     "Permission:Flats.Create": "Create Flats",
+    "Permission:Flats.Update": "Edit Flats",
+    "Permission:Flats.Delete": "Delete Flats",
     "Permission:FlatMembers": "Flat Members",
     "Permission:FlatMembers.Approve": "Approve Flat Members",
     "Permission:FlatMembers.PromoteToManager": "Promote Flat Members to Manager",
@@ -89,6 +91,10 @@
     "Setting:RateLimiting.Patch.PermitLimit": "Rate limit: PATCH requests per window",
     "Setting:RateLimiting.Patch.WindowSeconds": "Rate limit: PATCH window (seconds)",
     "ApiResponse:DefaultSuccessMessage": "The request completed successfully.",
-    "ApiResponse:DefaultErrorMessage": "An error occurred while processing the request."
+    "ApiResponse:DefaultErrorMessage": "An error occurred while processing the request.",
+    "ApiResponse:Unauthorized": "You need to sign in to do this.",
+    "ApiResponse:Forbidden": "You don't have permission to do this.",
+    "ApiResponse:NotFound": "The requested resource was not found.",
+    "ApiResponse:RateLimitExceeded": "You've sent too many requests. Please wait a moment and try again."
   }
 }

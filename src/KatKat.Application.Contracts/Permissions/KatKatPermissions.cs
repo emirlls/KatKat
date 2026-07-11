@@ -11,6 +11,7 @@ public class KatKatPermissions
         public const string Default = GroupName + ".Complexes";
         public const string Create = Default + ".Create";
         public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
     }
 
     public static class Buildings
@@ -23,6 +24,8 @@ public class KatKatPermissions
     {
         public const string Default = GroupName + ".Flats";
         public const string Create = Default + ".Create";
+        public const string Update = Default + ".Update";
+        public const string Delete = Default + ".Delete";
     }
 
     public static class FlatMembers

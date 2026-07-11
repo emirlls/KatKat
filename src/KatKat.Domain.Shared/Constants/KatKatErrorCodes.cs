@@ -5,7 +5,6 @@ public static class KatKatErrorCodes
     private const string Prefix = "KatKat:";
 
     // Complex (01xxxx)
-    public const string ComplexMustBeCreatedInsideTenantScope = Prefix + "010001";
     public const string ComplexNameAlreadyExists = Prefix + "010002";
     public const string SubscriptionEndDateMustBeLaterThanCurrentEndDate = Prefix + "010003";
     public const string ComplexLatitudeOutOfRange = Prefix + "010004";

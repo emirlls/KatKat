@@ -2,7 +2,6 @@
   "culture": "tr",
   "texts": {
     "MyAccount":  "Hesabım",
-    "KatKat:010001": "Bir site (complex) sadece bir tenant kapsamında oluşturulabilir.",
     "KatKat:010002": "'{name}' isimli bir site zaten mevcut.",
     "KatKat:010003": "Yeni abonelik bitiş tarihi, mevcut bitiş tarihinden sonra olmalıdır.",
     "KatKat:010004": "Enlem (latitude) {minLatitude} ile {maxLatitude} arasında olmalıdır.",
@@ -39,10 +38,13 @@
     "Permission:Complexes": "Siteler",
     "Permission:Complexes.Create": "Site Oluşturma",
     "Permission:Complexes.Update": "Site Düzenleme",
+    "Permission:Complexes.Delete": "Site Silme",
     "Permission:Buildings": "Bloklar",
     "Permission:Buildings.Create": "Blok Oluşturma",
     "Permission:Flats": "Daireler",
     "Permission:Flats.Create": "Daire Oluşturma",
+    "Permission:Flats.Update": "Daire Düzenleme",
+    "Permission:Flats.Delete": "Daire Silme",
     "Permission:FlatMembers": "Daire Sakinleri",
     "Permission:FlatMembers.Approve": "Sakin Onaylama",
     "Permission:FlatMembers.PromoteToManager": "Sakini Yöneticiye Terfi Ettirme",
@@ -89,6 +91,10 @@
     "Setting:RateLimiting.Patch.PermitLimit": "Hız sınırı: pencere başına PATCH istek sayısı",
     "Setting:RateLimiting.Patch.WindowSeconds": "Hız sınırı: PATCH penceresi (saniye)",
     "ApiResponse:DefaultSuccessMessage": "İşlem başarıyla tamamlandı.",
-    "ApiResponse:DefaultErrorMessage": "İşlem sırasında bir hata oluştu."
+    "ApiResponse:DefaultErrorMessage": "İşlem sırasında bir hata oluştu.",
+    "ApiResponse:Unauthorized": "Bu işlemi yapabilmek için giriş yapmanız gerekiyor.",
+    "ApiResponse:Forbidden": "Bu işlemi yapmaya yetkiniz yok.",
+    "ApiResponse:NotFound": "İstenen kayıt bulunamadı.",
+    "ApiResponse:RateLimitExceeded": "Çok fazla istek gönderdiniz. Lütfen birkaç saniye sonra tekrar deneyin."
   }
 }

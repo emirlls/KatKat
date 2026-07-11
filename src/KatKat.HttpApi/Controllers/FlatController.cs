@@ -40,4 +40,14 @@ public class FlatController : KatKatController, IFlatAppService
     [HttpPost]
     [Authorize(KatKatPermissions.Flats.Create)]
     public Task<FlatDto> CreateAsync(CreateFlatDto input) => _flatAppService.CreateAsync(input);
+
+    /// <summary>Updates a Flat's basic info (flat number, floor, share factor).</summary>
+    [HttpPut("{id}")]
+    [Authorize(KatKatPermissions.Flats.Update)]
+    public Task<FlatDto> UpdateAsync(Guid id, UpdateFlatDto input) => _flatAppService.UpdateAsync(id, input);
+
+    /// <summary>Deletes a Flat.</summary>
+    [HttpDelete("{id}")]
+    [Authorize(KatKatPermissions.Flats.Delete)]
+    public Task DeleteAsync(Guid id) => _flatAppService.DeleteAsync(id);
 }

@@ -38,7 +38,7 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     internal Complex(
         Guid id,
-        Guid tenantId,
+        Guid? tenantId,
         string name,
         int neighborhoodId,
         string? address,

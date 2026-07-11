@@ -44,7 +44,7 @@ public class IssueAppService : KatKatAppService, IIssueAppService
         var issue = await _issueManager.CreateAsync(
             input.ComplexId, CurrentUser.GetId(), input.Title, input.Description, input.PhotoUrl);
 
-        await _issueRepository.InsertAsync(issue);
+        await _issueRepository.InsertAsync(issue, autoSave: true);
 
         return ObjectMapper.Map<Issue, IssueDto>(issue);
     }

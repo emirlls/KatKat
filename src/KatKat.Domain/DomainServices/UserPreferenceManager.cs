@@ -24,7 +24,7 @@ public class UserPreferenceManager : DomainService
         }
 
         preference = new UserPreference(GuidGenerator.Create(), CurrentTenant.Id, userId);
-        return await _userPreferenceRepository.InsertAsync(preference);
+        return await _userPreferenceRepository.InsertAsync(preference, autoSave: true);
     }
 
     public virtual async Task<UserPreference> SetNeighborRequestNotificationsAsync(Guid userId, bool enabled)

@@ -37,8 +37,26 @@ public class FlatAppService : KatKatAppService, IFlatAppService
     {
         var flat = await _flatManager.CreateAsync(input.BuildingId, input.FlatNumber, input.FloorNumber, input.ShareFactor);
 
-        await _flatRepository.InsertAsync(flat);
+        await _flatRepository.InsertAsync(flat, autoSave: true);
 
         return ObjectMapper.Map<Flat, FlatDto>(flat);
+    }
+
+    public async Task<FlatDto> UpdateAsync(Guid id, UpdateFlatDto input)
+    {
+        var flat = await _flatRepository.GetAsync(id);
+
+        flat.SetFlatNumber(input.FlatNumber);
+        flat.SetFloorNumber(input.FloorNumber);
+        flat.SetShareFactor(input.ShareFactor);
+
+        await _flatRepository.UpdateAsync(flat);
+
+        return ObjectMapper.Map<Flat, FlatDto>(flat);
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        await _flatRepository.DeleteAsync(id);
     }
 }

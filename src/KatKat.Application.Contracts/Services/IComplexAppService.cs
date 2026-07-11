@@ -11,11 +11,29 @@ public interface IComplexAppService : IApplicationService
 {
     Task<ComplexDto> GetAsync(Guid id);
 
+    /// <summary>
+    /// Finds Complexes by an optional City/District/Neighborhood filter and/or a case-insensitive
+    /// name search - lets the frontend offer a real picker instead of requiring the caller to
+    /// already know a Complex's id.
+    /// </summary>
+    Task<List<ComplexDto>> SearchAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount);
+
     Task<ComplexDto> CreateAsync(CreateComplexDto input);
 
     Task<ComplexDto> UpdateAsync(Guid id, UpdateComplexDto input);
 
+    Task DeleteAsync(Guid id);
+
     Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input);
+
+    /// <summary>
+    /// Recalculates every Complex's KatKat Score right now instead of waiting for the nightly
+    /// ScoreCalculationWorker - meant for demo/admin use so newly-created activity shows up on
+    /// the leaderboard/map immediately.
+    /// </summary>
+    Task RecalculateScoresAsync();
 
     /// <summary>
     /// Cross-tenant, aggregated-only ranking (KVKK privacy shield). Both filters are optional and
