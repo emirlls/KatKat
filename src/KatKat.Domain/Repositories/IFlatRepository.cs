@@ -16,4 +16,7 @@ public interface IFlatRepository : IKatKatRepository<Flat, Guid>
     /// per-flat Expense shares.
     /// </summary>
     Task<List<Flat>> GetListByComplexAsync(Guid complexId);
+
+    /// <summary>All Flats where the given user has a FlatMember record, within the given Complex.</summary>
+    Task<List<Flat>> GetListByUserAndComplexAsync(Guid userId, Guid complexId);
 }

@@ -17,4 +17,7 @@ public interface IFlatAppService : IApplicationService
     Task<FlatDto> UpdateAsync(Guid id, UpdateFlatDto input);
 
     Task DeleteAsync(Guid id);
+
+    /// <summary>Flats where the CURRENT user has a FlatMember record, within the given Complex.</summary>
+    Task<List<FlatDto>> GetMyFlatsAsync(Guid complexId);
 }

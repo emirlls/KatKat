@@ -1,10 +1,13 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using KatKat.Constants;
 using KatKat.Localization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Localization;
 
 namespace KatKat.ResponseWrapping;
@@ -77,7 +80,37 @@ public class ApiResponseWrapperMiddleware
         return context.Response.StatusCode is StatusCodes.Status204NoContent or StatusCodes.Status304NotModified;
     }
 
+    /// <summary>
+    /// Resolves and applies the culture UseAbpRequestLocalization negotiated for this request.
+    /// That middleware restores the previous ambient culture as soon as its own next() call
+    /// returns - which, from here, already happened (we run in the "after next()" half of our own
+    /// InvokeAsync) - so CultureInfo.CurrentUICulture is back to the default by the time this runs.
+    /// The negotiated culture is still readable from the request's IRequestCultureFeature, which
+    /// (unlike the thread culture) isn't torn down, so we re-apply it just for this localizer call.
+    /// </summary>
     private static string BuildEnvelopeJson(HttpContext context, MemoryStream buffer, IStringLocalizer<KatKatResource> localizer)
+    {
+        var requestCulture = context.Features.Get<IRequestCultureFeature>()?.RequestCulture;
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        if (requestCulture != null)
+        {
+            CultureInfo.CurrentCulture = requestCulture.Culture;
+            CultureInfo.CurrentUICulture = requestCulture.UICulture;
+        }
+
+        try
+        {
+            return BuildEnvelopeJsonCore(context, buffer, localizer);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
+    }
+
+    private static string BuildEnvelopeJsonCore(HttpContext context, MemoryStream buffer, IStringLocalizer<KatKatResource> localizer)
     {
         var statusCode = context.Response.StatusCode;
         var isSuccess = statusCode is >= 200 and < 300;
@@ -99,15 +132,29 @@ public class ApiResponseWrapperMiddleware
             }
             else if (root.TryGetProperty("error", out var error))
             {
-                if (error.TryGetProperty("message", out var messageElement) &&
+                // Only two kinds of error message are safe to show a user: KatKat's own
+                // BusinessExceptions (KatKatErrorCodes.* code, always localized and GUID-free) and
+                // FluentValidation failures (field-level detail already lives in validationErrors,
+                // the top-level message is ABP's own generic "request is not valid" text). Anything
+                // else - EntityNotFoundException, raw DB constraint violations, etc. - embeds
+                // technical details (entity type names, raw ids) in its message, so we keep the
+                // generic status-based fallback instead of leaking that text to the UI.
+                var hasKatKatErrorCode = error.TryGetProperty("code", out var codeElement) &&
+                    codeElement.ValueKind == JsonValueKind.String &&
+                    (codeElement.GetString() ?? string.Empty).StartsWith(KatKatErrorCodes.Prefix, StringComparison.Ordinal);
+
+                var hasValidationErrors = error.TryGetProperty("validationErrors", out var validationErrors) &&
+                    validationErrors.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined);
+
+                if ((hasKatKatErrorCode || hasValidationErrors) &&
+                    error.TryGetProperty("message", out var messageElement) &&
                     messageElement.ValueKind == JsonValueKind.String &&
                     !string.IsNullOrWhiteSpace(messageElement.GetString()))
                 {
                     message = messageElement.GetString()!;
                 }
 
-                if (error.TryGetProperty("validationErrors", out var validationErrors) &&
-                    validationErrors.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined))
+                if (hasValidationErrors)
                 {
                     data = validationErrors.Clone();
                 }

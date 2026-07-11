@@ -34,4 +34,16 @@ public class BuildingManager : DomainService
 
         return new Building(GuidGenerator.Create(), complex.TenantId, complexId, name, floorCount);
     }
+
+    public virtual async Task UpdateAsync(Building building, string name, int? floorCount)
+    {
+        if (await _buildingRepository.NameExistsInComplexAsync(building.ComplexId, name, building.Id))
+        {
+            throw new BusinessException(KatKatErrorCodes.BuildingNameAlreadyExistsInComplex)
+                .WithData("name", name);
+        }
+
+        building.SetName(name);
+        building.SetFloorCount(floorCount);
+    }
 }

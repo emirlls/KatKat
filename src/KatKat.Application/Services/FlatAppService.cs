@@ -7,6 +7,7 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
+using Volo.Abp.Users;
 
 namespace KatKat.Services;
 
@@ -58,5 +59,11 @@ public class FlatAppService : KatKatAppService, IFlatAppService
     public async Task DeleteAsync(Guid id)
     {
         await _flatRepository.DeleteAsync(id);
+    }
+
+    public async Task<List<FlatDto>> GetMyFlatsAsync(Guid complexId)
+    {
+        var flats = await _flatRepository.GetListByUserAndComplexAsync(CurrentUser.GetId(), complexId);
+        return flats.Select(f => ObjectMapper.Map<Flat, FlatDto>(f)).ToList();
     }
 }

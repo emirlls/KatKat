@@ -2,7 +2,7 @@
 
 public static class KatKatErrorCodes
 {
-    private const string Prefix = "KatKat:";
+    public const string Prefix = "KatKat:";
 
     // Complex (01xxxx)
     public const string ComplexNameAlreadyExists = Prefix + "010002";
@@ -13,6 +13,7 @@ public static class KatKatErrorCodes
     // Building (02xxxx)
     public const string BuildingNameAlreadyExistsInComplex = Prefix + "020001";
     public const string BuildingFloorCountMustBePositive = Prefix + "020002";
+    public const string BuildingHasFlatsCannotBeDeleted = Prefix + "020003";
 
     // Flat (03xxxx)
     public const string FlatNumberAlreadyExistsInBuilding = Prefix + "030001";

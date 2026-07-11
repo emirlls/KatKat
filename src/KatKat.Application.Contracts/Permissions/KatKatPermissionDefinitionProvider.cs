@@ -17,6 +17,8 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var buildings = myGroup.AddPermission(KatKatPermissions.Buildings.Default, L("Permission:Buildings"));
         buildings.AddChild(KatKatPermissions.Buildings.Create, L("Permission:Buildings.Create"));
+        buildings.AddChild(KatKatPermissions.Buildings.Update, L("Permission:Buildings.Update"));
+        buildings.AddChild(KatKatPermissions.Buildings.Delete, L("Permission:Buildings.Delete"));
 
         var flats = myGroup.AddPermission(KatKatPermissions.Flats.Default, L("Permission:Flats"));
         flats.AddChild(KatKatPermissions.Flats.Create, L("Permission:Flats.Create"));

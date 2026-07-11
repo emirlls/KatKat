@@ -50,4 +50,9 @@ public class FlatController : KatKatController, IFlatAppService
     [HttpDelete("{id}")]
     [Authorize(KatKatPermissions.Flats.Delete)]
     public Task DeleteAsync(Guid id) => _flatAppService.DeleteAsync(id);
+
+    /// <summary>Gets the current user's own Flats within a Complex (for self-service flows like SOS reporting, where a user should never have to know/enter a raw Flat id).</summary>
+    [HttpGet("my")]
+    [Authorize]
+    public Task<List<FlatDto>> GetMyFlatsAsync(Guid complexId) => _flatAppService.GetMyFlatsAsync(complexId);
 }

@@ -18,6 +18,9 @@ services:
   redis:
     image: redis:7-alpine
     container_name: katkat-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - katkat_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -43,3 +46,4 @@ services:
 
 volumes:
   katkat_postgres_data:
+  katkat_redis_data:
