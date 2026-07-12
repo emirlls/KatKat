@@ -27,6 +27,14 @@ public interface IComplexAppService : IApplicationService
         int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
         int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount);
 
+    /// <summary>
+    /// Admin-only: the same search, across every Tenant's Complexes at once - lets the platform
+    /// admin browse/find any site regardless of which Manager owns it.
+    /// </summary>
+    Task<List<AdminComplexListItemDto>> SearchAcrossAllTenantsAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount);
+
     Task<ComplexDto> CreateAsync(CreateComplexDto input);
 
     Task<ComplexDto> UpdateAsync(Guid id, UpdateComplexDto input);

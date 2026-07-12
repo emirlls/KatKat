@@ -44,6 +44,14 @@ public class ComplexController : KatKatController, IComplexAppService
         int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount) =>
         _complexAppService.SearchAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
 
+    /// <summary>Admin-only: the same search, across every Tenant's Complexes at once.</summary>
+    [HttpGet("admin/all")]
+    [Authorize(Roles = "admin")]
+    public Task<List<AdminComplexListItemDto>> SearchAcrossAllTenantsAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount) =>
+        _complexAppService.SearchAcrossAllTenantsAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
+
     /// <summary>Creates a new Complex for the current tenant.</summary>
     [HttpPost]
     [Authorize(KatKatPermissions.Complexes.Create)]

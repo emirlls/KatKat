@@ -1,10 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using KatKat.Constants;
 using KatKat.Data;
 using KatKat.Dtos;
+using KatKat.Dtos.Common;
+using KatKat.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Data;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
@@ -22,6 +28,8 @@ public class AccountAppService : KatKatAppService, IAccountAppService
     private readonly KatKatRoleDataSeedContributor _roleDataSeedContributor;
     private readonly IDataFilter _dataFilter;
     private readonly ILookupNormalizer _lookupNormalizer;
+    private readonly IComplexRepository _complexRepository;
+    private readonly LocationLookupResolver _locationLookupResolver;
 
     public AccountAppService(
         IdentityUserManager userManager,
@@ -31,7 +39,9 @@ public class AccountAppService : KatKatAppService, IAccountAppService
         ITenantRepository tenantRepository,
         KatKatRoleDataSeedContributor roleDataSeedContributor,
         IDataFilter dataFilter,
-        ILookupNormalizer lookupNormalizer)
+        ILookupNormalizer lookupNormalizer,
+        IComplexRepository complexRepository,
+        LocationLookupResolver locationLookupResolver)
     {
         _userManager = userManager;
         _identityUserRepository = identityUserRepository;
@@ -41,6 +51,8 @@ public class AccountAppService : KatKatAppService, IAccountAppService
         _roleDataSeedContributor = roleDataSeedContributor;
         _dataFilter = dataFilter;
         _lookupNormalizer = lookupNormalizer;
+        _complexRepository = complexRepository;
+        _locationLookupResolver = locationLookupResolver;
     }
 
     public async Task CreateManagerAsync(CreateManagerDto input)
@@ -56,6 +68,7 @@ public class AccountAppService : KatKatAppService, IAccountAppService
             await _roleDataSeedContributor.SeedAsync(new DataSeedContext(tenant.Id));
 
             var user = new Volo.Abp.Identity.IdentityUser(_guidGenerator.Create(), input.UserName, input.Email, tenant.Id);
+            user.SetPhoneNumber(input.PhoneNumber, confirmed: false);
             (await _userManager.CreateAsync(user, input.Password)).CheckErrors();
             (await _userManager.AddToRoleAsync(user, KatKatRoleConsts.ManagerRoleName)).CheckErrors();
         }
@@ -70,5 +83,137 @@ public class AccountAppService : KatKatAppService, IAccountAppService
             var user = await _identityUserRepository.FindByNormalizedUserNameAsync(normalizedUserName);
             return user?.TenantId;
         }
+    }
+
+    public async Task<List<ManagerListItemDto>> GetManagersAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount)
+    {
+        var tenants = await _tenantRepository.GetListAsync();
+
+        var rows = new List<(Tenant Tenant, Volo.Abp.Identity.IdentityUser Manager, Entities.Complex? Complex)>();
+        foreach (var tenant in tenants)
+        {
+            try
+            {
+                using (CurrentTenant.Change(tenant.Id))
+                {
+                    var manager = await FindTenantManagerAsync();
+                    if (manager == null)
+                    {
+                        continue;
+                    }
+
+                    var complex = (await _complexRepository.GetListAsync()).FirstOrDefault();
+                    rows.Add((tenant, manager, complex));
+                }
+            }
+            catch (Exception ex)
+            {
+                // One tenant's bad data (or a transient failure) must not deny the admin visibility
+                // into every OTHER tenant's managers - skip it and keep going.
+                Logger.LogWarning(ex, "Skipping tenant {TenantId} in the admin managers directory", tenant.Id);
+            }
+        }
+
+        var hierarchies = await _locationLookupResolver.ResolveNeighborhoodHierarchiesAsync(
+            rows.Where(r => r.Complex != null).Select(r => r.Complex!.NeighborhoodId));
+
+        var dtos = rows.Select(r =>
+        {
+            // TryGetValue, not the indexer: a Complex whose Neighborhood was since deleted must not
+            // 500 the whole cross-tenant listing - it just shows without a resolved location.
+            (LookupDto City, LookupDto District, LookupDto Neighborhood) hierarchy = default;
+            var hasHierarchy = r.Complex != null && hierarchies.TryGetValue(r.Complex.NeighborhoodId, out hierarchy);
+            return new ManagerListItemDto
+            {
+                Id = r.Manager.Id,
+                TenantId = r.Tenant.Id,
+                UserName = r.Manager.UserName,
+                Email = r.Manager.Email,
+                PhoneNumber = r.Manager.PhoneNumber,
+                ComplexId = r.Complex?.Id,
+                ComplexName = r.Complex?.Name,
+                City = hasHierarchy ? hierarchy.City : null,
+                District = hasHierarchy ? hierarchy.District : null,
+                Neighborhood = hasHierarchy ? hierarchy.Neighborhood : null,
+                CreationTime = r.Manager.CreationTime,
+            };
+        });
+
+        if (neighborhoodId != null)
+        {
+            dtos = dtos.Where(d => d.Neighborhood?.Id == neighborhoodId);
+        }
+        else if (districtId != null)
+        {
+            dtos = dtos.Where(d => d.District?.Id == districtId);
+        }
+        else if (cityId != null)
+        {
+            dtos = dtos.Where(d => d.City?.Id == cityId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var normalizedName = name.ToLowerInvariant();
+            dtos = dtos.Where(d =>
+                d.UserName.ToLowerInvariant().Contains(normalizedName) ||
+                d.Email.ToLowerInvariant().Contains(normalizedName));
+        }
+
+        return dtos.OrderBy(d => d.UserName).Take(maxResultCount).ToList();
+    }
+
+    public async Task<ManagerListItemDto> UpdateManagerAsync(Guid tenantId, UpdateManagerDto input)
+    {
+        using (CurrentTenant.Change(tenantId))
+        {
+            var manager = await FindTenantManagerAsync()
+                ?? throw new EntityNotFoundException(typeof(Volo.Abp.Identity.IdentityUser));
+
+            (await _userManager.SetUserNameAsync(manager, input.UserName)).CheckErrors();
+            (await _userManager.SetEmailAsync(manager, input.Email)).CheckErrors();
+            (await _userManager.SetPhoneNumberAsync(manager, input.PhoneNumber)).CheckErrors();
+
+            var complex = (await _complexRepository.GetListAsync()).FirstOrDefault();
+            var hasHierarchy = false;
+            (LookupDto City, LookupDto District, LookupDto Neighborhood) hierarchy = default;
+            if (complex != null)
+            {
+                var hierarchies = await _locationLookupResolver.ResolveNeighborhoodHierarchiesAsync(new[] { complex.NeighborhoodId });
+                hasHierarchy = hierarchies.TryGetValue(complex.NeighborhoodId, out hierarchy);
+            }
+
+            return new ManagerListItemDto
+            {
+                Id = manager.Id,
+                TenantId = tenantId,
+                UserName = manager.UserName,
+                Email = manager.Email,
+                PhoneNumber = manager.PhoneNumber,
+                ComplexId = complex?.Id,
+                ComplexName = complex?.Name,
+                City = hasHierarchy ? hierarchy.City : null,
+                District = hasHierarchy ? hierarchy.District : null,
+                Neighborhood = hasHierarchy ? hierarchy.Neighborhood : null,
+                CreationTime = manager.CreationTime,
+            };
+        }
+    }
+
+    /// <summary>Finds the (exactly one, by construction) Manager-role user in the CURRENT ambient tenant.</summary>
+    private async Task<Volo.Abp.Identity.IdentityUser?> FindTenantManagerAsync()
+    {
+        var users = await _identityUserRepository.GetListAsync();
+        foreach (var user in users)
+        {
+            if (await _userManager.IsInRoleAsync(user, KatKatRoleConsts.ManagerRoleName))
+            {
+                return user;
+            }
+        }
+
+        return null;
     }
 }

@@ -77,6 +77,20 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         return await MapToComplexDtosAsync(complexes);
     }
 
+    public async Task<List<AdminComplexListItemDto>> SearchAcrossAllTenantsAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount)
+    {
+        var complexes = await _complexRepository.SearchAcrossAllTenantsAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
+        var complexDtos = await MapToComplexDtosAsync(complexes);
+
+        return complexes.Zip(complexDtos, (complex, dto) => new AdminComplexListItemDto
+        {
+            Complex = dto,
+            TenantId = complex.TenantId,
+        }).ToList();
+    }
+
     public async Task<ComplexDto> CreateAsync(CreateComplexDto input)
     {
         var complex = await _complexManager.CreateAsync(

@@ -11,8 +11,9 @@ namespace KatKat.RateLimiting;
 
 /// <summary>
 /// Enforces a distributed, per-HTTP-method rate limit keyed by the current user (or, for
-/// anonymous callers, their remote IP). Limits are read from ABP Settings on every request, so
-/// an admin can tighten/loosen them at runtime without a redeploy.
+/// anonymous callers, their remote IP) AND the specific action being called. Limits are read from
+/// ABP Settings on every request, so an admin can tighten/loosen them at runtime without a
+/// redeploy.
 /// </summary>
 public class RateLimitFilter : IAsyncActionFilter
 {
@@ -36,7 +37,12 @@ public class RateLimitFilter : IAsyncActionFilter
         var windowSeconds = await _settingProvider.GetAsync(windowSetting, defaultWindow);
 
         var clientKey = _currentUser.Id?.ToString() ?? context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var rateLimitKey = $"{RateLimitConsts.CacheKeyPrefix}{httpMethod}:{clientKey}";
+        // Scoped per action (not just per HTTP method) so unrelated endpoints don't share one
+        // budget - e.g. a page firing several different GETs on load, or a screen that legitimately
+        // re-fetches its own data often (a live map/leaderboard), no longer starves every other
+        // GET the same user makes within the same second.
+        var actionKey = context.ActionDescriptor.DisplayName ?? context.ActionDescriptor.Id;
+        var rateLimitKey = $"{RateLimitConsts.CacheKeyPrefix}{httpMethod}:{actionKey}:{clientKey}";
 
         var allowed = await _rateLimitStore.TryAcquireAsync(rateLimitKey, permitLimit, TimeSpan.FromSeconds(windowSeconds));
         if (!allowed)

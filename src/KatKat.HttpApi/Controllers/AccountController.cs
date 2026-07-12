@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using KatKat.Constants;
 using KatKat.Dtos;
 using KatKat.RateLimiting;
 using KatKat.Services;
@@ -37,4 +39,18 @@ public class AccountController : KatKatController, IAccountAppService
     [AllowAnonymous]
     public Task<Guid?> GetTenantIdByUserNameAsync(string userName) =>
         _accountAppService.GetTenantIdByUserNameAsync(userName);
+
+    /// <summary>Admin-only: every Manager across every Tenant, filterable by site location and/or name.</summary>
+    [HttpGet("managers")]
+    [Authorize(Roles = "admin")]
+    public Task<List<ManagerListItemDto>> GetManagersAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount) =>
+        _accountAppService.GetManagersAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
+
+    /// <summary>Admin-only: corrects a Manager's username/email/phone.</summary>
+    [HttpPut("managers/{tenantId}")]
+    [Authorize(Roles = "admin")]
+    public Task<ManagerListItemDto> UpdateManagerAsync(Guid tenantId, UpdateManagerDto input) =>
+        _accountAppService.UpdateManagerAsync(tenantId, input);
 }

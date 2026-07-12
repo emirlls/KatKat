@@ -3,13 +3,12 @@ using KatKat.Dtos;
 
 namespace KatKat.Validators;
 
-public class CreateManagerDtoValidator : AbstractValidator<CreateManagerDto>
+public class UpdateManagerDtoValidator : AbstractValidator<UpdateManagerDto>
 {
-    public CreateManagerDtoValidator()
+    public UpdateManagerDtoValidator()
     {
         RuleFor(x => x.UserName).NotEmpty();
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.PhoneNumber).NotEmpty();
-        RuleFor(x => x.Password).NotEmpty();
     }
 }

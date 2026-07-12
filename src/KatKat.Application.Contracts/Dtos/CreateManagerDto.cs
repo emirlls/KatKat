@@ -12,5 +12,12 @@ public class CreateManagerDto
 
     public string Email { get; set; } = null!;
 
+    /// <summary>
+    /// KVKK note: collected only for the platform admin to reach this Manager, never returned by
+    /// any endpoint a Manager/Resident can call - only the admin-only manager directory
+    /// (<see cref="IAccountAppService.GetManagersAsync"/>) surfaces it.
+    /// </summary>
+    public string PhoneNumber { get; set; } = null!;
+
     public string Password { get; set; } = null!;
 }
