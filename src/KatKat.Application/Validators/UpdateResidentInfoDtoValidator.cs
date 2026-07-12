@@ -3,12 +3,12 @@ using KatKat.Dtos;
 
 namespace KatKat.Validators;
 
-public class RegisterDtoValidator : AbstractValidator<RegisterDto>
+public class UpdateResidentInfoDtoValidator : AbstractValidator<UpdateResidentInfoDto>
 {
-    public RegisterDtoValidator()
+    public UpdateResidentInfoDtoValidator()
     {
         RuleFor(x => x.UserName).NotEmpty();
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
+        RuleFor(x => x.PhoneNumber).NotEmpty();
     }
 }

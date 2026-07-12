@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using KatKat.Constants;
 using KatKat.Permissions;
@@ -11,10 +12,11 @@ using Volo.Abp.PermissionManagement;
 namespace KatKat.Data;
 
 /// <summary>
-/// Seeds the self-registration roles (see AccountAppService.RegisterAsync). Idempotent - a
-/// role that already exists is left untouched, so this is a safe no-op on every subsequent
-/// application start. Manager only ever gets KatKat's own permissions, never ABP's own
-/// Identity/Setting/Tenant management ones (those stay exclusive to the seeded "admin" role).
+/// Seeds the KatKat "Manager"/"Resident" roles. Runs once at host startup (host-level, no
+/// tenant) AND once per new Tenant right after AccountAppService.CreateManagerAsync creates one -
+/// IdentityRole is itself tenant-scoped, so a role seeded for one tenant is invisible to another;
+/// every tenant needs its own copy of these two roles. Idempotent per (tenant, role name) pair, so
+/// it's a safe no-op on every subsequent call for the same tenant.
 /// </summary>
 public class KatKatRoleDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
@@ -34,9 +36,16 @@ public class KatKatRoleDataSeedContributor : IDataSeedContributor, ITransientDep
 
     public async Task SeedAsync(DataSeedContext context)
     {
-        await EnsureRoleExistsAsync(KatKatRoleConsts.ResidentRoleName);
+        if (await EnsureRoleExistsAsync(KatKatRoleConsts.ResidentRoleName, context.TenantId))
+        {
+            // Residents only get the subset of KatKat permissions that are genuinely resident-facing
+            // (booking an existing Resource) - everything else (Complex/Building/Flat management,
+            // raising Expenses, resolving Issues/SosAlerts, location management) stays Manager-only.
+            await _permissionManager.SetAsync(
+                KatKatPermissions.ResourceReservations.Create, RolePermissionProviderName, KatKatRoleConsts.ResidentRoleName, isGranted: true);
+        }
 
-        if (await EnsureRoleExistsAsync(KatKatRoleConsts.ManagerRoleName))
+        if (await EnsureRoleExistsAsync(KatKatRoleConsts.ManagerRoleName, context.TenantId))
         {
             foreach (var permissionName in KatKatPermissions.GetAll())
             {
@@ -46,14 +55,14 @@ public class KatKatRoleDataSeedContributor : IDataSeedContributor, ITransientDep
     }
 
     /// <summary>Returns true only when the role was just created (so callers can seed its permissions once).</summary>
-    private async Task<bool> EnsureRoleExistsAsync(string roleName)
+    private async Task<bool> EnsureRoleExistsAsync(string roleName, Guid? tenantId)
     {
         if (await _roleManager.FindByNameAsync(roleName) != null)
         {
             return false;
         }
 
-        (await _roleManager.CreateAsync(new Volo.Abp.Identity.IdentityRole(_guidGenerator.Create(), roleName))).CheckErrors();
+        (await _roleManager.CreateAsync(new Volo.Abp.Identity.IdentityRole(_guidGenerator.Create(), roleName, tenantId))).CheckErrors();
         return true;
     }
 }

@@ -32,6 +32,11 @@ public class ComplexController : KatKatController, IComplexAppService
     [HttpGet("{id}")]
     public Task<ComplexDto> GetAsync(Guid id) => _complexAppService.GetAsync(id);
 
+    /// <summary>Gets the current user's own Complex (or null if their Manager hasn't created one yet).</summary>
+    [HttpGet("my")]
+    [Authorize]
+    public Task<ComplexDto?> GetMyComplexAsync() => _complexAppService.GetMyComplexAsync();
+
     /// <summary>Finds Complexes by an optional City/District/Neighborhood filter and/or name search.</summary>
     [HttpGet]
     public Task<List<ComplexDto>> SearchAsync(

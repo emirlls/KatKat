@@ -35,6 +35,9 @@ public class KatKatPermissions
         public const string Default = GroupName + ".FlatMembers";
         public const string Approve = Default + ".Approve";
         public const string PromoteToManager = Default + ".PromoteToManager";
+        public const string Invite = Default + ".Invite";
+        public const string Remove = Default + ".Remove";
+        public const string UpdateResidentInfo = Default + ".UpdateResidentInfo";
     }
 
     public static class P2PRequests

@@ -12,6 +12,13 @@ public interface IComplexAppService : IApplicationService
     Task<ComplexDto> GetAsync(Guid id);
 
     /// <summary>
+    /// The current user's own Complex (their Tenant owns exactly one, or none yet if a Manager
+    /// hasn't created their site) - since multi-tenancy means a Manager/Resident only ever
+    /// belongs to one site, there is nothing to "pick" here, just what's already theirs.
+    /// </summary>
+    Task<ComplexDto?> GetMyComplexAsync();
+
+    /// <summary>
     /// Finds Complexes by an optional City/District/Neighborhood filter and/or a case-insensitive
     /// name search - lets the frontend offer a real picker instead of requiring the caller to
     /// already know a Complex's id.

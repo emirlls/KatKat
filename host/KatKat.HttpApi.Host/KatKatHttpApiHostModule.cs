@@ -171,6 +171,13 @@ public class KatKatHttpApiHostModule : AbpModule
                 // longer match AbpClaimTypes.UserId/Role ("sub"/"role") - breaking CurrentUser and
                 // every permission check for every authenticated request.
                 options.MapInboundClaims = false;
+
+                // ASP.NET Core's role-based checks (ClaimsPrincipal.IsInRole, [Authorize(Roles = ...)])
+                // read whichever claim type ClaimsIdentity.RoleClaimType points at - which defaults to
+                // the long ClaimTypes.Role URI. Since MapInboundClaims=false keeps the short "role"
+                // claim instead, that default never matches; point it at the short form so
+                // [Authorize(Roles = "admin")] (used to gate Manager provisioning) actually works.
+                options.TokenValidationParameters.RoleClaimType = AbpClaimTypes.Role;
             });
 
         Configure<AbpDistributedCacheOptions>(options =>

@@ -27,6 +27,16 @@ public class ApiResponseWrapperMiddleware
 
     private static readonly PathString ApiRoutePathPrefix = "/" + KatKatRemoteServiceConsts.RoutePathPrefix;
 
+    /// <summary>
+    /// Error code prefixes whose message text is always safe/helpful to show a user as-is. Besides
+    /// KatKat's own BusinessExceptions, ABP's AbpIdentityResultException (thrown by
+    /// IdentityResult.CheckErrors() - "Username 'x' is already taken.", "Passwords must have at
+    /// least one non alphanumeric character.", etc.) uses this "Volo.Abp.Identity:" prefix - those
+    /// messages come directly from ASP.NET Core Identity's own validation, never from raw
+    /// entity/id reflection, so they're exactly as safe as KatKat's own codes.
+    /// </summary>
+    private static readonly string[] TrustedErrorCodePrefixes = { KatKatErrorCodes.Prefix, "Volo.Abp.Identity:" };
+
     private readonly RequestDelegate _next;
 
     public ApiResponseWrapperMiddleware(RequestDelegate next)
@@ -132,21 +142,22 @@ public class ApiResponseWrapperMiddleware
             }
             else if (root.TryGetProperty("error", out var error))
             {
-                // Only two kinds of error message are safe to show a user: KatKat's own
-                // BusinessExceptions (KatKatErrorCodes.* code, always localized and GUID-free) and
-                // FluentValidation failures (field-level detail already lives in validationErrors,
-                // the top-level message is ABP's own generic "request is not valid" text). Anything
-                // else - EntityNotFoundException, raw DB constraint violations, etc. - embeds
-                // technical details (entity type names, raw ids) in its message, so we keep the
-                // generic status-based fallback instead of leaking that text to the UI.
-                var hasKatKatErrorCode = error.TryGetProperty("code", out var codeElement) &&
+                // Only two kinds of error message are safe to show a user: exceptions carrying one
+                // of TrustedErrorCodePrefixes (always localized and GUID-free) and FluentValidation
+                // failures (field-level detail already lives in validationErrors, the top-level
+                // message is ABP's own generic "request is not valid" text). Anything else -
+                // EntityNotFoundException, raw DB constraint violations, etc. - embeds technical
+                // details (entity type names, raw ids) in its message, so we keep the generic
+                // status-based fallback instead of leaking that text to the UI.
+                var hasTrustedErrorCode = error.TryGetProperty("code", out var codeElement) &&
                     codeElement.ValueKind == JsonValueKind.String &&
-                    (codeElement.GetString() ?? string.Empty).StartsWith(KatKatErrorCodes.Prefix, StringComparison.Ordinal);
+                    Array.Exists(TrustedErrorCodePrefixes, prefix =>
+                        (codeElement.GetString() ?? string.Empty).StartsWith(prefix, StringComparison.Ordinal));
 
                 var hasValidationErrors = error.TryGetProperty("validationErrors", out var validationErrors) &&
                     validationErrors.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined);
 
-                if ((hasKatKatErrorCode || hasValidationErrors) &&
+                if ((hasTrustedErrorCode || hasValidationErrors) &&
                     error.TryGetProperty("message", out var messageElement) &&
                     messageElement.ValueKind == JsonValueKind.String &&
                     !string.IsNullOrWhiteSpace(messageElement.GetString()))

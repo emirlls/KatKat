@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using KatKat.Dtos;
 using KatKat.RateLimiting;
@@ -9,9 +10,9 @@ using Volo.Abp;
 namespace KatKat.Controllers;
 
 /// <summary>
-/// Self-registration for new users - no invitation required. IsManager on the request chooses
-/// between the Manager role (full KatKat management permissions) and the Resident role (none -
-/// residents rely on the self-service endpoints: join a flat, report issues, P2P, reservations, SOS).
+/// Account provisioning. There is no public self-registration - a Manager account can only be
+/// created by the "admin" superuser, and a Resident account can only be created by redeeming a
+/// Manager-issued invite (see ResidentInvitationController).
 /// </summary>
 [Area(KatKatRemoteServiceConsts.ModuleName)]
 [RemoteService(Name = KatKatRemoteServiceConsts.RemoteServiceName)]
@@ -26,7 +27,14 @@ public class AccountController : KatKatController, IAccountAppService
         _accountAppService = accountAppService;
     }
 
-    [HttpPost("register")]
+    /// <summary>Admin-only: creates a new Manager account and its own isolated Tenant.</summary>
+    [HttpPost("managers")]
+    [Authorize(Roles = "admin")]
+    public Task CreateManagerAsync(CreateManagerDto input) => _accountAppService.CreateManagerAsync(input);
+
+    /// <summary>Anonymous: resolves a username's Tenant so the login flow can scope the token request.</summary>
+    [HttpGet("tenant-lookup")]
     [AllowAnonymous]
-    public Task RegisterAsync(RegisterDto input) => _accountAppService.RegisterAsync(input);
+    public Task<Guid?> GetTenantIdByUserNameAsync(string userName) =>
+        _accountAppService.GetTenantIdByUserNameAsync(userName);
 }

@@ -58,6 +58,17 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         return await MapToComplexDtoAsync(complex);
     }
 
+    public async Task<ComplexDto?> GetMyComplexAsync()
+    {
+        // GetListAsync is transparently filtered to the current Tenant by ABP's IMultiTenant
+        // query filter, so this only ever returns the caller's own site - a Manager/Resident
+        // never picks a Complex, they just have (at most) one.
+        var complexes = await _complexRepository.GetListAsync();
+        var complex = complexes.FirstOrDefault();
+
+        return complex == null ? null : await MapToComplexDtoAsync(complex);
+    }
+
     public async Task<List<ComplexDto>> SearchAsync(
         int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
         int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount)

@@ -58,4 +58,8 @@ public static class KatKatErrorCodes
     public const string CityHasDistrictsCannotBeDeleted = Prefix + "110004";
     public const string DistrictHasNeighborhoodsCannotBeDeleted = Prefix + "110005";
     public const string NeighborhoodInUseByComplexCannotBeDeleted = Prefix + "110006";
+
+    // ResidentInvitation (12xxxx)
+    public const string ResidentInvitationAlreadyUsed = Prefix + "120001";
+    public const string ResidentInvitationExpired = Prefix + "120002";
 }

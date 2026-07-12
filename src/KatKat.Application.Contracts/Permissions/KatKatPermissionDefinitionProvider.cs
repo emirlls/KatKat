@@ -28,6 +28,9 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
         var flatMembers = myGroup.AddPermission(KatKatPermissions.FlatMembers.Default, L("Permission:FlatMembers"));
         flatMembers.AddChild(KatKatPermissions.FlatMembers.Approve, L("Permission:FlatMembers.Approve"));
         flatMembers.AddChild(KatKatPermissions.FlatMembers.PromoteToManager, L("Permission:FlatMembers.PromoteToManager"));
+        flatMembers.AddChild(KatKatPermissions.FlatMembers.Invite, L("Permission:FlatMembers.Invite"));
+        flatMembers.AddChild(KatKatPermissions.FlatMembers.Remove, L("Permission:FlatMembers.Remove"));
+        flatMembers.AddChild(KatKatPermissions.FlatMembers.UpdateResidentInfo, L("Permission:FlatMembers.UpdateResidentInfo"));
 
         var p2pRequests = myGroup.AddPermission(KatKatPermissions.P2PRequests.Default, L("Permission:P2PRequests"));
         p2pRequests.AddChild(KatKatPermissions.P2PRequests.Create, L("Permission:P2PRequests.Create"));
