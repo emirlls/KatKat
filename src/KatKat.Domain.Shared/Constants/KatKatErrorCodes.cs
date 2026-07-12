@@ -42,8 +42,9 @@ public static class KatKatErrorCodes
     // Resource / ResourceReservation (08xxxx)
     public const string ReservationEndTimeMustBeAfterStartTime = Prefix + "080001";
     public const string ReservationOverlapsWithAnExistingReservation = Prefix + "080002";
-    public const string ReservationMustBeConfirmedToCancel = Prefix + "080003";
+    public const string ReservationCannotBeCancelled = Prefix + "080003";
     public const string ReservationCanOnlyBeCancelledByReserver = Prefix + "080004";
+    public const string ReservationMustBePendingToDecide = Prefix + "080005";
 
     // SosAlert (09xxxx)
     public const string SosAlertMustBeHelpNeededToResolve = Prefix + "090001";

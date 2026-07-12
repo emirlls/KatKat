@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Constants;
 using KatKat.Permissions;
@@ -7,62 +8,80 @@ using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement;
 
 namespace KatKat.Data;
 
 /// <summary>
-/// Seeds the KatKat "Manager"/"Resident" roles. Runs once at host startup (host-level, no
-/// tenant) AND once per new Tenant right after AccountAppService.CreateManagerAsync creates one -
-/// IdentityRole is itself tenant-scoped, so a role seeded for one tenant is invisible to another;
-/// every tenant needs its own copy of these two roles. Idempotent per (tenant, role name) pair, so
-/// it's a safe no-op on every subsequent call for the same tenant.
+/// Seeds (and reconciles) the KatKat "Manager"/"Resident" roles. Runs at host startup, once per new
+/// Tenant right after AccountAppService.CreateManagerAsync creates one, and again for every existing
+/// tenant on startup (see KatKatHttpApiHostModule.ReconcileTenantRolesAsync). IdentityRole is itself
+/// tenant-scoped, so each tenant needs its own copy of these two roles.
+///
+/// Fully idempotent: it (re)applies the CURRENT permission set on every run - not only when the role
+/// is first created - so a permission added in a later build reaches tenants that predate it without
+/// any data loss.
 /// </summary>
 public class KatKatRoleDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
     private const string RolePermissionProviderName = "R";
 
+    /// <summary>
+    /// Resident-facing capabilities: booking a Resource, reporting an Issue, raising a neighbor
+    /// request, and acknowledging a neighbor's SOS ("Yardım Ulaştı"). Everything else -
+    /// Complex/Building/Flat management, splitting Expenses, resolving Issues, approving
+    /// reservations, location management - stays Manager-only.
+    /// </summary>
+    private static readonly string[] ResidentPermissions =
+    {
+        KatKatPermissions.ResourceReservations.Create,
+        KatKatPermissions.Issues.Create,
+        KatKatPermissions.P2PRequests.Create,
+        KatKatPermissions.SosAlerts.Resolve,
+    };
+
     private readonly IdentityRoleManager _roleManager;
     private readonly IPermissionManager _permissionManager;
     private readonly IGuidGenerator _guidGenerator;
+    private readonly ICurrentTenant _currentTenant;
 
     public KatKatRoleDataSeedContributor(
-        IdentityRoleManager roleManager, IPermissionManager permissionManager, IGuidGenerator guidGenerator)
+        IdentityRoleManager roleManager,
+        IPermissionManager permissionManager,
+        IGuidGenerator guidGenerator,
+        ICurrentTenant currentTenant)
     {
         _roleManager = roleManager;
         _permissionManager = permissionManager;
         _guidGenerator = guidGenerator;
+        _currentTenant = currentTenant;
     }
 
     public async Task SeedAsync(DataSeedContext context)
     {
-        if (await EnsureRoleExistsAsync(KatKatRoleConsts.ResidentRoleName, context.TenantId))
+        // Pin the ambient tenant so role lookups/creates and permission grants all land in the
+        // tenant we're seeding (harmless no-op when the caller already changed it).
+        using (_currentTenant.Change(context.TenantId))
         {
-            // Residents only get the subset of KatKat permissions that are genuinely resident-facing
-            // (booking an existing Resource) - everything else (Complex/Building/Flat management,
-            // raising Expenses, resolving Issues/SosAlerts, location management) stays Manager-only.
-            await _permissionManager.SetAsync(
-                KatKatPermissions.ResourceReservations.Create, RolePermissionProviderName, KatKatRoleConsts.ResidentRoleName, isGranted: true);
-        }
-
-        if (await EnsureRoleExistsAsync(KatKatRoleConsts.ManagerRoleName, context.TenantId))
-        {
-            foreach (var permissionName in KatKatPermissions.GetAll())
-            {
-                await _permissionManager.SetAsync(permissionName, RolePermissionProviderName, KatKatRoleConsts.ManagerRoleName, isGranted: true);
-            }
+            await EnsureRoleWithGrantsAsync(KatKatRoleConsts.ResidentRoleName, context.TenantId, ResidentPermissions);
+            await EnsureRoleWithGrantsAsync(KatKatRoleConsts.ManagerRoleName, context.TenantId, KatKatPermissions.GetAll());
         }
     }
 
-    /// <summary>Returns true only when the role was just created (so callers can seed its permissions once).</summary>
-    private async Task<bool> EnsureRoleExistsAsync(string roleName, Guid? tenantId)
+    private async Task EnsureRoleWithGrantsAsync(string roleName, Guid? tenantId, IReadOnlyCollection<string> permissions)
     {
-        if (await _roleManager.FindByNameAsync(roleName) != null)
+        if (await _roleManager.FindByNameAsync(roleName) == null)
         {
-            return false;
+            (await _roleManager.CreateAsync(
+                new Volo.Abp.Identity.IdentityRole(_guidGenerator.Create(), roleName, tenantId))).CheckErrors();
         }
 
-        (await _roleManager.CreateAsync(new Volo.Abp.Identity.IdentityRole(_guidGenerator.Create(), roleName, tenantId))).CheckErrors();
-        return true;
+        // Reconcile every run: SetAsync is an idempotent upsert, so re-granting the current set is
+        // cheap and lets existing tenants pick up permissions introduced after their role was created.
+        foreach (var permissionName in permissions)
+        {
+            await _permissionManager.SetAsync(permissionName, RolePermissionProviderName, roleName, isGranted: true);
+        }
     }
 }

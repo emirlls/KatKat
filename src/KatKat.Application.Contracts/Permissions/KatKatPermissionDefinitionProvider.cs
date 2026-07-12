@@ -47,6 +47,7 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var resourceReservations = myGroup.AddPermission(KatKatPermissions.ResourceReservations.Default, L("Permission:ResourceReservations"));
         resourceReservations.AddChild(KatKatPermissions.ResourceReservations.Create, L("Permission:ResourceReservations.Create"));
+        resourceReservations.AddChild(KatKatPermissions.ResourceReservations.Approve, L("Permission:ResourceReservations.Approve"));
 
         var sosAlerts = myGroup.AddPermission(KatKatPermissions.SosAlerts.Default, L("Permission:SosAlerts"));
         sosAlerts.AddChild(KatKatPermissions.SosAlerts.Resolve, L("Permission:SosAlerts.Resolve"));

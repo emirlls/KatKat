@@ -8,8 +8,9 @@ using Volo.Abp.MultiTenancy;
 namespace KatKat.Entities;
 
 /// <summary>
-/// An hourly booking of a Resource. Overlap with other Confirmed reservations for the same
-/// Resource is rejected by ResourceReservationManager before this is ever constructed.
+/// A booking of a Resource. Starts life as <see cref="ReservationStatus.Pending"/> and only blocks
+/// the slot once a manager approves it (-> Confirmed). Overlap with other Confirmed reservations for
+/// the same Resource is rejected both at request time and again at approval time.
 /// </summary>
 public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
@@ -38,12 +39,14 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
         ResourceId = resourceId;
         ReservedByUserId = reservedByUserId;
         SetTimeRange(startTime, endTime);
-        Status = ReservationStatus.Confirmed;
+        Status = ReservationStatus.Pending;
     }
 
     private void SetTimeRange(DateTime startTime, DateTime endTime)
     {
-        if (endTime <= startTime)
+        // A same-instant range (start == end) is allowed - the UI lets a resident book a single
+        // day/slot where both bounds land on the same value; only end strictly before start is invalid.
+        if (endTime < startTime)
         {
             throw new BusinessException(KatKatErrorCodes.ReservationEndTimeMustBeAfterStartTime);
         }
@@ -52,11 +55,35 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
         EndTime = endTime;
     }
 
+    /// <summary>Manager decision: accept the pending request. Overlap is re-checked by the manager first.</summary>
+    public void Approve()
+    {
+        if (Status != ReservationStatus.Pending)
+        {
+            throw new BusinessException(KatKatErrorCodes.ReservationMustBePendingToDecide);
+        }
+
+        Status = ReservationStatus.Confirmed;
+    }
+
+    /// <summary>Manager decision: decline the pending request.</summary>
+    public void Reject()
+    {
+        if (Status != ReservationStatus.Pending)
+        {
+            throw new BusinessException(KatKatErrorCodes.ReservationMustBePendingToDecide);
+        }
+
+        Status = ReservationStatus.Rejected;
+    }
+
     public void Cancel()
     {
-        if (Status != ReservationStatus.Confirmed)
+        // The reserver may withdraw a booking while it is still pending or after it was confirmed;
+        // an already cancelled/rejected booking cannot be cancelled again.
+        if (Status != ReservationStatus.Pending && Status != ReservationStatus.Confirmed)
         {
-            throw new BusinessException(KatKatErrorCodes.ReservationMustBeConfirmedToCancel);
+            throw new BusinessException(KatKatErrorCodes.ReservationCannotBeCancelled);
         }
 
         Status = ReservationStatus.Cancelled;

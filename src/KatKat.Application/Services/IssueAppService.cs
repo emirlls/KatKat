@@ -46,7 +46,12 @@ public class IssueAppService : KatKatAppService, IIssueAppService
 
         await _issueRepository.InsertAsync(issue, autoSave: true);
 
-        return ObjectMapper.Map<Issue, IssueDto>(issue);
+        var dto = ObjectMapper.Map<Issue, IssueDto>(issue);
+
+        // A newly reported fault shows up live on every complex member's Issues board (managers act on it).
+        await BroadcastAsync(issue.ComplexId, KatKatHubConsts.EventNames.IssueCreated, dto);
+
+        return dto;
     }
 
     public async Task<IssueDto> StartProgressAsync(Guid id)
@@ -57,7 +62,11 @@ public class IssueAppService : KatKatAppService, IIssueAppService
 
         await _issueRepository.UpdateAsync(issue);
 
-        return ObjectMapper.Map<Issue, IssueDto>(issue);
+        var dto = ObjectMapper.Map<Issue, IssueDto>(issue);
+
+        await BroadcastAsync(issue.ComplexId, KatKatHubConsts.EventNames.IssueInProgress, dto);
+
+        return dto;
     }
 
     public async Task<IssueDto> ResolveAsync(Guid id)
@@ -70,10 +79,13 @@ public class IssueAppService : KatKatAppService, IIssueAppService
 
         var dto = ObjectMapper.Map<Issue, IssueDto>(issue);
 
-        await _hubContext.Clients
-            .User(issue.ReporterUserId.ToString())
-            .SendAsync(KatKatHubConsts.EventNames.IssueResolved, dto);
+        await BroadcastAsync(issue.ComplexId, KatKatHubConsts.EventNames.IssueResolved, dto);
 
         return dto;
+    }
+
+    private Task BroadcastAsync(Guid complexId, string eventName, IssueDto dto)
+    {
+        return _hubContext.Clients.Group(KatKatHub.GroupName(complexId)).SendAsync(eventName, dto);
     }
 }

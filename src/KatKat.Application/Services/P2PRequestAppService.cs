@@ -77,6 +77,11 @@ public class P2PRequestAppService : KatKatAppService, IP2PRequestAppService
 
         await _p2pRequestRepository.UpdateAsync(request);
 
-        return ObjectMapper.Map<P2PRequest, P2PRequestDto>(request);
+        var dto = ObjectMapper.Map<P2PRequest, P2PRequestDto>(request);
+
+        // Tell neighbors the request is gone so their lists drop it without a manual refresh.
+        await _hubNotifier.NotifyP2PRequestEventAsync(request.ComplexId, KatKatHubConsts.EventNames.P2PRequestCancelled, dto);
+
+        return dto;
     }
 }

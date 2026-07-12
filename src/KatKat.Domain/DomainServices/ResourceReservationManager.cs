@@ -21,8 +21,9 @@ public class ResourceReservationManager : DomainService
     }
 
     /// <summary>
-    /// Rejects the booking if it overlaps any existing Confirmed reservation for the same
-    /// Resource - the core conflict-prevention rule ("otopark kavgaları kökten çözülür").
+    /// Creates a pending booking, rejecting it up front if it already overlaps a Confirmed
+    /// reservation for the same Resource. Other pending requests for the same slot are allowed to
+    /// coexist - the manager picks which one to approve.
     /// </summary>
     public virtual async Task<ResourceReservation> CreateAsync(
         Guid resourceId, Guid reservedByUserId, DateTime startTime, DateTime endTime)
@@ -35,5 +36,20 @@ public class ResourceReservationManager : DomainService
         }
 
         return new ResourceReservation(GuidGenerator.Create(), resource.TenantId, resourceId, reservedByUserId, startTime, endTime);
+    }
+
+    /// <summary>
+    /// Approves a pending reservation, re-checking overlap first so a manager can't confirm two
+    /// requests that would collide (a competing request may have been approved in the meantime).
+    /// </summary>
+    public virtual async Task ApproveAsync(ResourceReservation reservation)
+    {
+        if (await _resourceReservationRepository.HasOverlapAsync(
+                reservation.ResourceId, reservation.StartTime, reservation.EndTime, reservation.Id))
+        {
+            throw new BusinessException(KatKatErrorCodes.ReservationOverlapsWithAnExistingReservation);
+        }
+
+        reservation.Approve();
     }
 }

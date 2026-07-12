@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using OpenIddict.Server;
+using KatKat.Data;
 using KatKat.EntityFrameworkCore;
 using KatKat.Hubs;
 using KatKat.MultiTenancy;
@@ -45,7 +46,9 @@ using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.Swashbuckle;
+using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using Volo.Abp.Uow;
 using Volo.Abp.VirtualFileSystem;
 
 namespace KatKat;
@@ -282,6 +285,33 @@ public class KatKatHttpApiHostModule : AbpModule
         // CityDataSeedContributor is idempotent (no-op once the table is non-empty), so this is
         // safe to run on every application start.
         await scope.ServiceProvider.GetRequiredService<IDataSeeder>().SeedAsync();
+
+        // The host-level SeedAsync above only touches the host tenant. IdentityRole is itself
+        // tenant-scoped, so reconcile the KatKat Manager/Resident roles (and their CURRENT
+        // permission grants) into every existing tenant - this is how permission changes shipped
+        // in a new build reach tenants created before it, without wiping any data.
+        await ReconcileTenantRolesAsync(scope.ServiceProvider);
+    }
+
+    private static async Task ReconcileTenantRolesAsync(IServiceProvider serviceProvider)
+    {
+        var tenantRepository = serviceProvider.GetRequiredService<ITenantRepository>();
+        var currentTenant = serviceProvider.GetRequiredService<ICurrentTenant>();
+        var unitOfWorkManager = serviceProvider.GetRequiredService<IUnitOfWorkManager>();
+        var roleSeeder = serviceProvider.GetRequiredService<KatKatRoleDataSeedContributor>();
+
+        var tenants = await tenantRepository.GetListAsync();
+        foreach (var tenant in tenants)
+        {
+            // Each tenant gets its own committed unit of work so a single failure can't roll back
+            // the others (mirrors how ABP's own DataSeeder wraps contributor runs).
+            using (currentTenant.Change(tenant.Id))
+            using (var uow = unitOfWorkManager.Begin(requiresNew: true))
+            {
+                await roleSeeder.SeedAsync(new DataSeedContext(tenant.Id));
+                await uow.CompleteAsync();
+            }
+        }
     }
 
     private static async Task MigrateDatabaseAsync(IConfiguration configuration)

@@ -69,6 +69,7 @@ public class KatKatPermissions
     {
         public const string Default = GroupName + ".ResourceReservations";
         public const string Create = Default + ".Create";
+        public const string Approve = Default + ".Approve";
     }
 
     public static class SosAlerts

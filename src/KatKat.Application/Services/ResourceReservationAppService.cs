@@ -55,7 +55,39 @@ public class ResourceReservationAppService : KatKatAppService, IResourceReservat
 
         var dto = ObjectMapper.Map<ResourceReservation, ResourceReservationDto>(reservation);
 
+        // Broadcast the pending request to the whole complex so managers see it and can act.
         await BroadcastAsync(reservation.ResourceId, KatKatHubConsts.EventNames.ResourceReservationCreated, dto);
+
+        return dto;
+    }
+
+    public async Task<ResourceReservationDto> ApproveAsync(Guid id)
+    {
+        var reservation = await _resourceReservationRepository.GetAsync(id);
+
+        await _resourceReservationManager.ApproveAsync(reservation);
+        await _resourceReservationRepository.UpdateAsync(reservation);
+
+        var dto = ObjectMapper.Map<ResourceReservation, ResourceReservationDto>(reservation);
+
+        // Complex-wide refresh (calendars) + a direct nudge to the person who made the request.
+        await BroadcastAsync(reservation.ResourceId, KatKatHubConsts.EventNames.ResourceReservationApproved, dto);
+        await NotifyReserverAsync(reservation.ReservedByUserId, KatKatHubConsts.EventNames.ResourceReservationApproved, dto);
+
+        return dto;
+    }
+
+    public async Task<ResourceReservationDto> RejectAsync(Guid id)
+    {
+        var reservation = await _resourceReservationRepository.GetAsync(id);
+
+        reservation.Reject();
+        await _resourceReservationRepository.UpdateAsync(reservation);
+
+        var dto = ObjectMapper.Map<ResourceReservation, ResourceReservationDto>(reservation);
+
+        await BroadcastAsync(reservation.ResourceId, KatKatHubConsts.EventNames.ResourceReservationRejected, dto);
+        await NotifyReserverAsync(reservation.ReservedByUserId, KatKatHubConsts.EventNames.ResourceReservationRejected, dto);
 
         return dto;
     }
@@ -86,5 +118,10 @@ public class ResourceReservationAppService : KatKatAppService, IResourceReservat
         await _hubContext.Clients
             .Group(KatKatHub.GroupName(resource.ComplexId))
             .SendAsync(eventName, dto);
+    }
+
+    private Task NotifyReserverAsync(Guid reservedByUserId, string eventName, ResourceReservationDto dto)
+    {
+        return _hubContext.Clients.User(reservedByUserId.ToString()).SendAsync(eventName, dto);
     }
 }

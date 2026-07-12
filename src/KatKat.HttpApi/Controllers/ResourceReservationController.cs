@@ -37,11 +37,21 @@ public class ResourceReservationController : KatKatController, IResourceReservat
     public Task<List<ResourceReservationDto>> GetListByResourceAsync(Guid resourceId) =>
         _resourceReservationAppService.GetListByResourceAsync(resourceId);
 
-    /// <summary>Books the Resource for a time range - rejected if it overlaps an existing reservation.</summary>
+    /// <summary>Requests a booking (starts Pending) - rejected if it overlaps a confirmed reservation.</summary>
     [HttpPost]
     [Authorize(KatKatPermissions.ResourceReservations.Create)]
     public Task<ResourceReservationDto> CreateAsync(CreateResourceReservationDto input) =>
         _resourceReservationAppService.CreateAsync(input);
+
+    /// <summary>Manager-only: approves a pending reservation.</summary>
+    [HttpPost("{id}/approve")]
+    [Authorize(KatKatPermissions.ResourceReservations.Approve)]
+    public Task<ResourceReservationDto> ApproveAsync(Guid id) => _resourceReservationAppService.ApproveAsync(id);
+
+    /// <summary>Manager-only: rejects a pending reservation.</summary>
+    [HttpPost("{id}/reject")]
+    [Authorize(KatKatPermissions.ResourceReservations.Approve)]
+    public Task<ResourceReservationDto> RejectAsync(Guid id) => _resourceReservationAppService.RejectAsync(id);
 
     /// <summary>Cancels a reservation - only the person who made it may do this.</summary>
     [HttpPost("{id}/cancel")]

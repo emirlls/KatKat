@@ -12,8 +12,14 @@ public interface IResourceReservationAppService : IApplicationService
 
     Task<List<ResourceReservationDto>> GetListByResourceAsync(Guid resourceId);
 
-    /// <summary>Rejects the booking if it overlaps an existing Confirmed reservation.</summary>
+    /// <summary>Requests a booking (starts Pending); rejected if it overlaps a Confirmed reservation.</summary>
     Task<ResourceReservationDto> CreateAsync(CreateResourceReservationDto input);
+
+    /// <summary>Manager-only: approves a pending reservation (re-checks overlap), notifying the reserver.</summary>
+    Task<ResourceReservationDto> ApproveAsync(Guid id);
+
+    /// <summary>Manager-only: rejects a pending reservation, notifying the reserver.</summary>
+    Task<ResourceReservationDto> RejectAsync(Guid id);
 
     Task<ResourceReservationDto> CancelAsync(Guid id);
 }
