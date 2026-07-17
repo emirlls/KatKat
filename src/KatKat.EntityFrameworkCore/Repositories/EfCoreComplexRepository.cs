@@ -61,6 +61,14 @@ public class EfCoreComplexRepository : KatKatEfCoreRepository<Complex, Guid>, IC
         }
     }
 
+    public async Task<Complex> GetAcrossAllTenantsAsync(Guid id)
+    {
+        using (_dataFilter.Disable<IMultiTenant>())
+        {
+            return await GetAsync(id);
+        }
+    }
+
     private static IQueryable<Complex> ApplySearchFilters(
         KatKatDbContext dbContext, IQueryable<Complex> query,
         int? cityId, int? districtId, int? neighborhoodId, string? name)

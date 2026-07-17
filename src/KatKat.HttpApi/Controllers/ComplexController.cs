@@ -67,6 +67,29 @@ public class ComplexController : KatKatController, IComplexAppService
     [Authorize(KatKatPermissions.Complexes.Delete)]
     public Task DeleteAsync(Guid id) => _complexAppService.DeleteAsync(id);
 
+    /// <summary>Admin-only: the same update, for any Complex regardless of which Tenant owns it.</summary>
+    [HttpPut("admin/{id}")]
+    [Authorize(Roles = "admin")]
+    public Task<ComplexDto> UpdateAcrossTenantsAsync(Guid id, UpdateComplexDto input) =>
+        _complexAppService.UpdateAcrossTenantsAsync(id, input);
+
+    /// <summary>Admin-only: the same delete, for any Complex regardless of which Tenant owns it.</summary>
+    [HttpDelete("admin/{id}")]
+    [Authorize(Roles = "admin")]
+    public Task DeleteAcrossTenantsAsync(Guid id) => _complexAppService.DeleteAcrossTenantsAsync(id);
+
+    /// <summary>Admin-only: suspends or restores a site's public visibility (leaderboards/nearby-map).</summary>
+    [HttpPut("admin/{id}/active")]
+    [Authorize(Roles = "admin")]
+    public Task<ComplexDto> SetActiveAcrossTenantsAsync(Guid id, bool isActive) =>
+        _complexAppService.SetActiveAcrossTenantsAsync(id, isActive);
+
+    /// <summary>Admin-only: a Complex's full structure (Buildings -&gt; Flats -&gt; residents).</summary>
+    [HttpGet("admin/{id}/detail")]
+    [Authorize(Roles = "admin")]
+    public Task<AdminSiteDetailDto> GetDetailAcrossTenantsAsync(Guid id) =>
+        _complexAppService.GetDetailAcrossTenantsAsync(id);
+
     /// <summary>Extends a Complex's subscription end date.</summary>
     [HttpPost("{id}/extend-subscription")]
     [Authorize(KatKatPermissions.Complexes.Update)]

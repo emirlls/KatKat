@@ -23,4 +23,6 @@ public class ComplexDto : FullAuditedEntityDto<Guid>
     public DateTime SubscriptionStartDate { get; set; }
 
     public DateTime? SubscriptionEndDate { get; set; }
+
+    public bool IsActive { get; set; }
 }

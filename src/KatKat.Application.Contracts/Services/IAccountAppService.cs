@@ -29,4 +29,17 @@ public interface IAccountAppService
 
     /// <summary>Admin-only: corrects a Manager's username/email/phone.</summary>
     Task<ManagerListItemDto> UpdateManagerAsync(Guid tenantId, UpdateManagerDto input);
+
+    /// <summary>
+    /// Admin-only: reversibly blocks (isActive=false) or restores (isActive=true) a Manager's
+    /// ability to log in, without touching their Tenant or any data.
+    /// </summary>
+    Task<ManagerListItemDto> SetManagerActiveAsync(Guid tenantId, bool isActive);
+
+    /// <summary>
+    /// Admin-only: permanently removes a Manager and every user in their Tenant (soft-deleted, so
+    /// recoverable at the database level, but immediately and irreversibly inaccessible through
+    /// the app).
+    /// </summary>
+    Task DeleteManagerAsync(Guid tenantId);
 }

@@ -11,6 +11,7 @@ using KatKat.Settings;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp;
 using Volo.Abp.Caching;
+using Volo.Abp.Identity;
 using Volo.Abp.Settings;
 
 namespace KatKat.Services;
@@ -35,6 +36,10 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
     private readonly ScoreManager _scoreManager;
     private readonly IDistributedCache<List<LeaderboardDto>> _leaderboardCache;
     private readonly LocationLookupResolver _locationLookupResolver;
+    private readonly IBuildingRepository _buildingRepository;
+    private readonly IFlatRepository _flatRepository;
+    private readonly IFlatMemberRepository _flatMemberRepository;
+    private readonly IIdentityUserRepository _identityUserRepository;
 
     public ComplexAppService(
         IComplexRepository complexRepository,
@@ -42,7 +47,11 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         ComplexManager complexManager,
         ScoreManager scoreManager,
         IDistributedCache<List<LeaderboardDto>> leaderboardCache,
-        LocationLookupResolver locationLookupResolver)
+        LocationLookupResolver locationLookupResolver,
+        IBuildingRepository buildingRepository,
+        IFlatRepository flatRepository,
+        IFlatMemberRepository flatMemberRepository,
+        IIdentityUserRepository identityUserRepository)
     {
         _complexRepository = complexRepository;
         _complexScoreRepository = complexScoreRepository;
@@ -50,6 +59,10 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         _scoreManager = scoreManager;
         _leaderboardCache = leaderboardCache;
         _locationLookupResolver = locationLookupResolver;
+        _buildingRepository = buildingRepository;
+        _flatRepository = flatRepository;
+        _flatMemberRepository = flatMemberRepository;
+        _identityUserRepository = identityUserRepository;
     }
 
     public async Task<ComplexDto> GetAsync(Guid id)
@@ -118,6 +131,105 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
     public async Task DeleteAsync(Guid id)
     {
         await _complexRepository.DeleteAsync(id);
+    }
+
+    public async Task<ComplexDto> UpdateAcrossTenantsAsync(Guid id, UpdateComplexDto input)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            complex.SetName(input.Name);
+            complex.SetNeighborhood(input.NeighborhoodId);
+            complex.SetAddress(input.Address);
+            complex.SetLocation(input.Latitude, input.Longitude);
+
+            await _complexRepository.UpdateAsync(complex);
+
+            return await MapToComplexDtoAsync(complex);
+        }
+    }
+
+    public async Task DeleteAcrossTenantsAsync(Guid id)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            await _complexRepository.DeleteAsync(id);
+        }
+    }
+
+    public async Task<ComplexDto> SetActiveAcrossTenantsAsync(Guid id, bool isActive)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            if (isActive)
+            {
+                complex.Activate();
+            }
+            else
+            {
+                complex.Deactivate();
+            }
+
+            await _complexRepository.UpdateAsync(complex);
+
+            return await MapToComplexDtoAsync(complex);
+        }
+    }
+
+    public async Task<AdminSiteDetailDto> GetDetailAcrossTenantsAsync(Guid id)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            var complexDto = await MapToComplexDtoAsync(complex);
+
+            // Three batched queries (buildings, flats, flat members) regardless of how many
+            // buildings/flats the site has, instead of one query per building plus one per flat.
+            var buildings = await _buildingRepository.GetListByComplexAsync(id);
+            var flatsByBuildingId = (await _flatRepository.GetListByComplexAsync(id))
+                .GroupBy(f => f.BuildingId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+            var membersByFlatId = (await _flatMemberRepository.GetListByComplexAsync(id))
+                .GroupBy(m => m.FlatId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // One batched lookup for every resident's username across the whole site, instead of
+            // one per flat.
+            var allUserIds = membersByFlatId.Values.SelectMany(m => m).Select(m => m.UserId).Distinct();
+            var users = await _identityUserRepository.GetListByIdsAsync(allUserIds);
+            var userNameById = users.ToDictionary(u => u.Id, u => u.UserName);
+
+            return new AdminSiteDetailDto
+            {
+                Complex = complexDto,
+                TenantId = complex.TenantId,
+                Buildings = buildings.Select(building => new AdminBuildingDetailDto
+                {
+                    Id = building.Id,
+                    Name = building.Name,
+                    FloorCount = building.FloorCount,
+                    Flats = flatsByBuildingId.GetValueOrDefault(building.Id, new List<Flat>()).Select(flat => new AdminFlatDetailDto
+                    {
+                        Id = flat.Id,
+                        FlatNumber = flat.FlatNumber,
+                        FloorNumber = flat.FloorNumber,
+                        ShareFactor = flat.ShareFactor,
+                        Residents = membersByFlatId.GetValueOrDefault(flat.Id, new List<FlatMember>()).Select(member => new AdminResidentDto
+                        {
+                            Id = member.Id,
+                            UserName = userNameById.GetValueOrDefault(member.UserId, member.UserId.ToString()),
+                            Role = member.Role,
+                        }).ToList(),
+                    }).ToList(),
+                }).ToList(),
+            };
+        }
     }
 
     public async Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input)

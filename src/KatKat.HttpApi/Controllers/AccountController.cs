@@ -53,4 +53,15 @@ public class AccountController : KatKatController, IAccountAppService
     [Authorize(Roles = "admin")]
     public Task<ManagerListItemDto> UpdateManagerAsync(Guid tenantId, UpdateManagerDto input) =>
         _accountAppService.UpdateManagerAsync(tenantId, input);
+
+    /// <summary>Admin-only: reversibly blocks or restores a Manager's ability to log in.</summary>
+    [HttpPut("managers/{tenantId}/active")]
+    [Authorize(Roles = "admin")]
+    public Task<ManagerListItemDto> SetManagerActiveAsync(Guid tenantId, bool isActive) =>
+        _accountAppService.SetManagerActiveAsync(tenantId, isActive);
+
+    /// <summary>Admin-only: permanently removes a Manager and every user in their Tenant.</summary>
+    [HttpDelete("managers/{tenantId}")]
+    [Authorize(Roles = "admin")]
+    public Task DeleteManagerAsync(Guid tenantId) => _accountAppService.DeleteManagerAsync(tenantId);
 }

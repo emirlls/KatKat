@@ -132,6 +132,7 @@ public class AccountAppService : KatKatAppService, IAccountAppService
                 UserName = r.Manager.UserName,
                 Email = r.Manager.Email,
                 PhoneNumber = r.Manager.PhoneNumber,
+                IsActive = r.Manager.IsActive,
                 ComplexId = r.Complex?.Id,
                 ComplexName = r.Complex?.Name,
                 City = hasHierarchy ? hierarchy.City : null,
@@ -176,30 +177,52 @@ public class AccountAppService : KatKatAppService, IAccountAppService
             (await _userManager.SetEmailAsync(manager, input.Email)).CheckErrors();
             (await _userManager.SetPhoneNumberAsync(manager, input.PhoneNumber)).CheckErrors();
 
-            var complex = (await _complexRepository.GetListAsync()).FirstOrDefault();
-            var hasHierarchy = false;
-            (LookupDto City, LookupDto District, LookupDto Neighborhood) hierarchy = default;
-            if (complex != null)
-            {
-                var hierarchies = await _locationLookupResolver.ResolveNeighborhoodHierarchiesAsync(new[] { complex.NeighborhoodId });
-                hasHierarchy = hierarchies.TryGetValue(complex.NeighborhoodId, out hierarchy);
-            }
-
-            return new ManagerListItemDto
-            {
-                Id = manager.Id,
-                TenantId = tenantId,
-                UserName = manager.UserName,
-                Email = manager.Email,
-                PhoneNumber = manager.PhoneNumber,
-                ComplexId = complex?.Id,
-                ComplexName = complex?.Name,
-                City = hasHierarchy ? hierarchy.City : null,
-                District = hasHierarchy ? hierarchy.District : null,
-                Neighborhood = hasHierarchy ? hierarchy.Neighborhood : null,
-                CreationTime = manager.CreationTime,
-            };
+            return await BuildManagerDtoAsync(tenantId, manager);
         }
+    }
+
+    /// <summary>
+    /// Admin-only: reversibly blocks (or restores) the Manager's ability to log in, without
+    /// touching their Tenant or any data - the safe alternative to <see cref="DeleteManagerAsync"/>.
+    /// </summary>
+    public async Task<ManagerListItemDto> SetManagerActiveAsync(Guid tenantId, bool isActive)
+    {
+        using (CurrentTenant.Change(tenantId))
+        {
+            var manager = await FindTenantManagerAsync()
+                ?? throw new EntityNotFoundException(typeof(Volo.Abp.Identity.IdentityUser));
+
+            manager.SetIsActive(isActive);
+            (await _userManager.UpdateAsync(manager)).CheckErrors();
+
+            return await BuildManagerDtoAsync(tenantId, manager);
+        }
+    }
+
+    /// <summary>
+    /// Admin-only: permanently removes a Manager and their entire site - every IdentityUser in the
+    /// Tenant (the Manager and any Residents) plus the Tenant itself. Everything is soft-deleted
+    /// (this codebase's usual FullAuditedAggregateRoot convention), so it's recoverable at the
+    /// database level if ever truly needed, but immediately and irreversibly inaccessible through
+    /// the app - the Tenant no longer resolves, so no login into it is possible again. Tenant-scoped
+    /// business data (Complexes/Buildings/Flats/...) is intentionally left in place rather than
+    /// cascade-purged: once the Tenant is gone, nothing can ever reach it again anyway.
+    /// </summary>
+    public async Task DeleteManagerAsync(Guid tenantId)
+    {
+        using (CurrentTenant.Change(tenantId))
+        {
+            // includeDetails: true is required here - IdentityUserManager.DeleteAsync() clears the
+            // user's Claims/Roles/Tokens/Logins/OrganizationUnits collections unconditionally, which
+            // throws a NullReferenceException if they weren't eager-loaded first.
+            var users = await _identityUserRepository.GetListAsync(includeDetails: true);
+            foreach (var user in users)
+            {
+                (await _userManager.DeleteAsync(user)).CheckErrors();
+            }
+        }
+
+        await _tenantRepository.DeleteAsync(tenantId, autoSave: true);
     }
 
     /// <summary>Finds the (exactly one, by construction) Manager-role user in the CURRENT ambient tenant.</summary>
@@ -215,5 +238,34 @@ public class AccountAppService : KatKatAppService, IAccountAppService
         }
 
         return null;
+    }
+
+    /// <summary>Must be called from within the target tenant's <see cref="ICurrentTenant"/> scope.</summary>
+    private async Task<ManagerListItemDto> BuildManagerDtoAsync(Guid tenantId, Volo.Abp.Identity.IdentityUser manager)
+    {
+        var complex = (await _complexRepository.GetListAsync()).FirstOrDefault();
+        var hasHierarchy = false;
+        (LookupDto City, LookupDto District, LookupDto Neighborhood) hierarchy = default;
+        if (complex != null)
+        {
+            var hierarchies = await _locationLookupResolver.ResolveNeighborhoodHierarchiesAsync(new[] { complex.NeighborhoodId });
+            hasHierarchy = hierarchies.TryGetValue(complex.NeighborhoodId, out hierarchy);
+        }
+
+        return new ManagerListItemDto
+        {
+            Id = manager.Id,
+            TenantId = tenantId,
+            UserName = manager.UserName,
+            Email = manager.Email,
+            PhoneNumber = manager.PhoneNumber,
+            IsActive = manager.IsActive,
+            ComplexId = complex?.Id,
+            ComplexName = complex?.Name,
+            City = hasHierarchy ? hierarchy.City : null,
+            District = hasHierarchy ? hierarchy.District : null,
+            Neighborhood = hasHierarchy ? hierarchy.Neighborhood : null,
+            CreationTime = manager.CreationTime,
+        };
     }
 }

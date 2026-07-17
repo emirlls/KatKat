@@ -27,4 +27,10 @@ public interface IComplexRepository : IKatKatRepository<Complex, Guid>
     /// </summary>
     Task<List<Complex>> SearchAcrossAllTenantsAsync(
         int? cityId, int? districtId, int? neighborhoodId, string? name, int maxResultCount);
+
+    /// <summary>
+    /// Admin-only: fetches a single Complex regardless of which Tenant owns it. Callers MUST gate
+    /// this behind an admin-only check, same as <see cref="SearchAcrossAllTenantsAsync"/>.
+    /// </summary>
+    Task<Complex> GetAcrossAllTenantsAsync(Guid id);
 }

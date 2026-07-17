@@ -52,4 +52,16 @@ public class EfCoreFlatMemberRepository : KatKatEfCoreRepository<FlatMember, Gui
             select flatMember.UserId
         ).Distinct().ToListAsync();
     }
+
+    public async Task<List<FlatMember>> GetListByComplexAsync(Guid complexId)
+    {
+        var dbContext = await GetDbContextAsync();
+        return await (
+            from flatMember in dbContext.FlatMembers
+            join flat in dbContext.Flats on flatMember.FlatId equals flat.Id
+            join building in dbContext.Buildings on flat.BuildingId equals building.Id
+            where building.ComplexId == complexId
+            select flatMember
+        ).ToListAsync();
+    }
 }

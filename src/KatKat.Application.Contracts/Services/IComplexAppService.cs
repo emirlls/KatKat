@@ -41,6 +41,24 @@ public interface IComplexAppService : IApplicationService
 
     Task DeleteAsync(Guid id);
 
+    /// <summary>Admin-only: the same update, for any Complex regardless of which Tenant owns it.</summary>
+    Task<ComplexDto> UpdateAcrossTenantsAsync(Guid id, UpdateComplexDto input);
+
+    /// <summary>Admin-only: the same delete, for any Complex regardless of which Tenant owns it.</summary>
+    Task DeleteAcrossTenantsAsync(Guid id);
+
+    /// <summary>
+    /// Admin-only: suspends (isActive=false) or restores (isActive=true) a site's public
+    /// visibility (leaderboards/nearby-map), independent of its subscription or any of its own data.
+    /// </summary>
+    Task<ComplexDto> SetActiveAcrossTenantsAsync(Guid id, bool isActive);
+
+    /// <summary>
+    /// Admin-only: a Complex's full structure - its Buildings, each Building's Flats, and each
+    /// Flat's residents - for the admin "Tüm Siteler" drill-down view.
+    /// </summary>
+    Task<AdminSiteDetailDto> GetDetailAcrossTenantsAsync(Guid id);
+
     Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input);
 
     /// <summary>

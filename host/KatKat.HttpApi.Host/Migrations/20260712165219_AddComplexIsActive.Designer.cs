@@ -3,6 +3,7 @@ using System;
 using KatKat.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace KatKat.Migrations
 {
     [DbContext(typeof(KatKatHttpApiHostMigrationsDbContext))]
-    partial class KatKatHttpApiHostMigrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260712165219_AddComplexIsActive")]
+    partial class AddComplexIsActive
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

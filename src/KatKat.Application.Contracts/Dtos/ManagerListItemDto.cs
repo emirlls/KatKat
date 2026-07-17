@@ -23,6 +23,8 @@ public class ManagerListItemDto
 
     public string? PhoneNumber { get; set; }
 
+    public bool IsActive { get; set; }
+
     public Guid? ComplexId { get; set; }
 
     public string? ComplexName { get; set; }

@@ -20,4 +20,10 @@ public interface IFlatMemberRepository : IKatKatRepository<FlatMember, Guid>
     /// FlatMember), used to resolve who to notify for complex-wide real-time events.
     /// </summary>
     Task<List<Guid>> GetUserIdsByComplexAsync(Guid complexId);
+
+    /// <summary>
+    /// Every FlatMember across every Building/Flat in the given Complex (joins Building -> Flat),
+    /// in one batched query - used by the admin site-detail drill-down to avoid a per-flat lookup.
+    /// </summary>
+    Task<List<FlatMember>> GetListByComplexAsync(Guid complexId);
 }
