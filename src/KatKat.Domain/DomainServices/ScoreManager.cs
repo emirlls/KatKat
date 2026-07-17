@@ -113,7 +113,8 @@ public class ScoreManager : DomainService
         decimal longitude,
         decimal financialScore,
         decimal socialScore,
-        decimal resolutionScore)
+        decimal resolutionScore,
+        bool isActive)
     {
         var (cityId, districtId, resolvedNeighborhoodId) = await _locationHierarchyResolver.ResolveAsync(neighborhoodId);
         var totalScore = CalculateComposite(financialScore, socialScore, resolutionScore);
@@ -122,7 +123,7 @@ public class ScoreManager : DomainService
         var existing = await _complexScoreRepository.FindByComplexIdAsync(complexId);
         if (existing != null)
         {
-            existing.Update(name, cityId, districtId, resolvedNeighborhoodId, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt);
+            existing.Update(name, cityId, districtId, resolvedNeighborhoodId, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt, isActive);
             return await _complexScoreRepository.UpdateAsync(existing);
         }
 
@@ -140,7 +141,8 @@ public class ScoreManager : DomainService
             socialScore,
             resolutionScore,
             totalScore,
-            calculatedAt
+            calculatedAt,
+            isActive
         );
 
         return await _complexScoreRepository.InsertAsync(complexScore, autoSave: true);
@@ -159,6 +161,6 @@ public class ScoreManager : DomainService
 
         return await UpsertAsync(
             complex.Id, complex.TenantId, complex.Name, complex.NeighborhoodId,
-            complex.Latitude, complex.Longitude, financialScore, socialScore, resolutionScore);
+            complex.Latitude, complex.Longitude, financialScore, socialScore, resolutionScore, complex.IsActive);
     }
 }

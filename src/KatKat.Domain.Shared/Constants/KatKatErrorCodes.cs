@@ -51,6 +51,7 @@ public static class KatKatErrorCodes
 
     // Leaderboard (10xxxx)
     public const string NearbyLeaderboardRadiusMustBePositive = Prefix + "100001";
+    public const string LeaderboardScopeRequired = Prefix + "100002";
 
     // Location: City / District / Neighborhood (11xxxx)
     public const string CityNameAlreadyExists = Prefix + "110001";

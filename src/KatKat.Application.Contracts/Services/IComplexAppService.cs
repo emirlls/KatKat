@@ -35,8 +35,6 @@ public interface IComplexAppService : IApplicationService
         int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
         int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount);
 
-    Task<ComplexDto> CreateAsync(CreateComplexDto input);
-
     Task<ComplexDto> UpdateAsync(Guid id, UpdateComplexDto input);
 
     Task DeleteAsync(Guid id);
@@ -69,12 +67,14 @@ public interface IComplexAppService : IApplicationService
     Task RecalculateScoresAsync();
 
     /// <summary>
-    /// Cross-tenant, aggregated-only ranking (KVKK privacy shield). Both filters are optional and
-    /// AND-combined: neither given = general/overall, district only = that district's own
-    /// ranking, both given = that neighborhood's own ranking within the district.
+    /// Cross-tenant, aggregated-only ranking (KVKK privacy shield). At least one of cityId/
+    /// districtId/neighborhoodId is required - there is deliberately no unfiltered, cross-city
+    /// ranking, since comparing sites nationwide isn't a meaningful comparison. All three are
+    /// AND-combined: city only = that city's own general ranking, city+district = that district's
+    /// own ranking, all three = that neighborhood's own ranking.
     /// </summary>
     Task<List<LeaderboardDto>> GetLeaderboardAsync(
-        int? districtId = null, int? neighborhoodId = null,
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null,
         int maxResultCount = KatKatConsts.DefaultLeaderboardMaxResultCount);
 
     /// <summary>

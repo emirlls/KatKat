@@ -49,6 +49,13 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
 
     public virtual DateTime CalculatedAt { get; protected set; }
 
+    /// <summary>
+    /// Denormalized copy of Complex.IsActive, refreshed on every recalculation - lets every
+    /// leaderboard/nearby-map query exclude an admin-suspended site with a plain column filter
+    /// instead of joining back into tenant-filtered Complex data.
+    /// </summary>
+    public virtual bool IsActive { get; protected set; } = true;
+
     protected ComplexScore()
     {
         /* EF Core */
@@ -68,12 +75,13 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
         decimal socialScore,
         decimal resolutionScore,
         decimal totalScore,
-        DateTime calculatedAt)
+        DateTime calculatedAt,
+        bool isActive)
         : base(id)
     {
         ComplexId = complexId;
         TenantId = tenantId;
-        Update(name, cityId, districtId, neighborhoodId, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt);
+        Update(name, cityId, districtId, neighborhoodId, latitude, longitude, financialScore, socialScore, resolutionScore, totalScore, calculatedAt, isActive);
     }
 
     public void Update(
@@ -87,7 +95,8 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
         decimal socialScore,
         decimal resolutionScore,
         decimal totalScore,
-        DateTime calculatedAt)
+        DateTime calculatedAt,
+        bool isActive)
     {
         Name = name;
         CityId = cityId;
@@ -100,5 +109,15 @@ public class ComplexScore : FullAuditedAggregateRoot<Guid>
         ResolutionScore = resolutionScore;
         TotalScore = totalScore;
         CalculatedAt = calculatedAt;
+        IsActive = isActive;
+    }
+
+    /// <summary>
+    /// Immediately reflects an admin's activate/deactivate toggle, without waiting for the next
+    /// scheduled score recalculation to pick up the change.
+    /// </summary>
+    public void SetActive(bool isActive)
+    {
+        IsActive = isActive;
     }
 }

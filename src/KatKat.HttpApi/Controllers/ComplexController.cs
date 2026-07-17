@@ -52,11 +52,6 @@ public class ComplexController : KatKatController, IComplexAppService
         int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount) =>
         _complexAppService.SearchAcrossAllTenantsAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
 
-    /// <summary>Creates a new Complex for the current tenant.</summary>
-    [HttpPost]
-    [Authorize(KatKatPermissions.Complexes.Create)]
-    public Task<ComplexDto> CreateAsync(CreateComplexDto input) => _complexAppService.CreateAsync(input);
-
     /// <summary>Updates a Complex's basic info (name, neighborhood, address).</summary>
     [HttpPut("{id}")]
     [Authorize(KatKatPermissions.Complexes.Update)]
@@ -106,13 +101,13 @@ public class ComplexController : KatKatController, IComplexAppService
 
     /// <summary>
     /// Gets the cross-tenant KatKat Score leaderboard (aggregated-only, KVKK privacy shield),
-    /// optionally scoped to a district and/or neighborhood.
+    /// scoped to at least a city (and optionally narrowed further to a district/neighborhood).
     /// </summary>
     [HttpGet("leaderboard")]
     public Task<List<LeaderboardDto>> GetLeaderboardAsync(
-        int? districtId = null, int? neighborhoodId = null,
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null,
         int maxResultCount = KatKatConsts.DefaultLeaderboardMaxResultCount) =>
-        _complexAppService.GetLeaderboardAsync(districtId, neighborhoodId, maxResultCount);
+        _complexAppService.GetLeaderboardAsync(cityId, districtId, neighborhoodId, maxResultCount);
 
     /// <summary>Gets nearby buildings' KatKat Scores within a radius (km) of a coordinate, for map rendering.</summary>
     [HttpGet("nearby-leaderboard")]

@@ -1,10 +1,12 @@
 namespace KatKat.Dtos;
 
 /// <summary>
-/// Admin-only: provisions a brand new Manager account, each scoped to its own new Tenant (one
-/// site's worth of data, fully isolated from every other Manager/Resident's). No email/SMS
-/// verification step - this deployment has no mail/SMS provider configured, so the account is
-/// active immediately upon creation.
+/// Admin-only: provisions a brand new Manager account together with their site, each scoped to
+/// its own new Tenant (one site's worth of data, fully isolated from every other
+/// Manager/Resident's). A Manager never creates their own site - only the admin does, at the
+/// same time the Manager account itself is created. No email/SMS verification step - this
+/// deployment has no mail/SMS provider configured, so the account is active immediately upon
+/// creation.
 /// </summary>
 public class CreateManagerDto
 {
@@ -20,4 +22,7 @@ public class CreateManagerDto
     public string PhoneNumber { get; set; } = null!;
 
     public string Password { get; set; } = null!;
+
+    /// <summary>The site created for this Manager, inside their new Tenant.</summary>
+    public CreateComplexDto Site { get; set; } = null!;
 }

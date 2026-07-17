@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using KatKat.Constants;
 using KatKat.Data;
+using KatKat.DomainServices;
 using KatKat.Dtos;
 using KatKat.Dtos.Common;
 using KatKat.Repositories;
@@ -30,6 +31,7 @@ public class AccountAppService : KatKatAppService, IAccountAppService
     private readonly ILookupNormalizer _lookupNormalizer;
     private readonly IComplexRepository _complexRepository;
     private readonly LocationLookupResolver _locationLookupResolver;
+    private readonly ComplexManager _complexManager;
 
     public AccountAppService(
         IdentityUserManager userManager,
@@ -41,7 +43,8 @@ public class AccountAppService : KatKatAppService, IAccountAppService
         IDataFilter dataFilter,
         ILookupNormalizer lookupNormalizer,
         IComplexRepository complexRepository,
-        LocationLookupResolver locationLookupResolver)
+        LocationLookupResolver locationLookupResolver,
+        ComplexManager complexManager)
     {
         _userManager = userManager;
         _identityUserRepository = identityUserRepository;
@@ -53,8 +56,13 @@ public class AccountAppService : KatKatAppService, IAccountAppService
         _lookupNormalizer = lookupNormalizer;
         _complexRepository = complexRepository;
         _locationLookupResolver = locationLookupResolver;
+        _complexManager = complexManager;
     }
 
+    /// <summary>
+    /// Creates the Manager's Tenant, their login, and their site - all together, since a Manager
+    /// never creates their own site (only the admin does, exactly once, right here).
+    /// </summary>
     public async Task CreateManagerAsync(CreateManagerDto input)
     {
         var tenant = await _tenantManager.CreateAsync(input.UserName);
@@ -71,6 +79,11 @@ public class AccountAppService : KatKatAppService, IAccountAppService
             user.SetPhoneNumber(input.PhoneNumber, confirmed: false);
             (await _userManager.CreateAsync(user, input.Password)).CheckErrors();
             (await _userManager.AddToRoleAsync(user, KatKatRoleConsts.ManagerRoleName)).CheckErrors();
+
+            var complex = await _complexManager.CreateAsync(
+                input.Site.Name, input.Site.NeighborhoodId, input.Site.Address,
+                input.Site.Latitude, input.Site.Longitude, input.Site.SubscriptionStartDate);
+            await _complexRepository.InsertAsync(complex, autoSave: true);
         }
     }
 

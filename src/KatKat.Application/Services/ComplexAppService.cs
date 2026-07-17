@@ -32,7 +32,6 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
 
     private readonly IComplexRepository _complexRepository;
     private readonly IComplexScoreRepository _complexScoreRepository;
-    private readonly ComplexManager _complexManager;
     private readonly ScoreManager _scoreManager;
     private readonly IDistributedCache<List<LeaderboardDto>> _leaderboardCache;
     private readonly LocationLookupResolver _locationLookupResolver;
@@ -44,7 +43,6 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
     public ComplexAppService(
         IComplexRepository complexRepository,
         IComplexScoreRepository complexScoreRepository,
-        ComplexManager complexManager,
         ScoreManager scoreManager,
         IDistributedCache<List<LeaderboardDto>> leaderboardCache,
         LocationLookupResolver locationLookupResolver,
@@ -55,7 +53,6 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
     {
         _complexRepository = complexRepository;
         _complexScoreRepository = complexScoreRepository;
-        _complexManager = complexManager;
         _scoreManager = scoreManager;
         _leaderboardCache = leaderboardCache;
         _locationLookupResolver = locationLookupResolver;
@@ -102,16 +99,6 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
             Complex = dto,
             TenantId = complex.TenantId,
         }).ToList();
-    }
-
-    public async Task<ComplexDto> CreateAsync(CreateComplexDto input)
-    {
-        var complex = await _complexManager.CreateAsync(
-            input.Name, input.NeighborhoodId, input.Address, input.Latitude, input.Longitude, input.SubscriptionStartDate);
-
-        await _complexRepository.InsertAsync(complex, autoSave: true);
-
-        return await MapToComplexDtoAsync(complex);
     }
 
     public async Task<ComplexDto> UpdateAsync(Guid id, UpdateComplexDto input)
@@ -176,6 +163,16 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
             }
 
             await _complexRepository.UpdateAsync(complex);
+
+            // Reflected immediately, rather than waiting for the next scheduled score
+            // recalculation to notice the Complex changed - a suspended site must disappear from
+            // the leaderboard/nearby-map right away.
+            var complexScore = await _complexScoreRepository.FindByComplexIdAsync(complex.Id);
+            if (complexScore != null)
+            {
+                complexScore.SetActive(isActive);
+                await _complexScoreRepository.UpdateAsync(complexScore);
+            }
 
             return await MapToComplexDtoAsync(complex);
         }
@@ -253,16 +250,25 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
             await _scoreManager.RecalculateAsync(complex, since);
         }
 
-        // Only the no-filter "Genel" key can be invalidated deterministically here; every other
-        // permutation (per-district, per-neighborhood, per-coordinate) relies on the short TTL above.
-        await _leaderboardCache.RemoveAsync(BuildLeaderboardCacheKey(null, null, KatKatConsts.DefaultLeaderboardMaxResultCount));
+        // Every per-city/per-district/per-neighborhood permutation relies on the short TTL above -
+        // there is no longer a single no-filter "Genel" key to invalidate deterministically, since a
+        // city (or narrower) scope is now mandatory.
     }
 
+    /// <summary>
+    /// The leaderboard is always scoped to at least a city - there is deliberately no unfiltered,
+    /// cross-city "general" ranking, since comparing sites nationwide isn't a meaningful comparison.
+    /// </summary>
     public async Task<List<LeaderboardDto>> GetLeaderboardAsync(
-        int? districtId = null, int? neighborhoodId = null,
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null,
         int maxResultCount = KatKatConsts.DefaultLeaderboardMaxResultCount)
     {
-        var cacheKey = BuildLeaderboardCacheKey(districtId, neighborhoodId, maxResultCount);
+        if (cityId == null && districtId == null && neighborhoodId == null)
+        {
+            throw new BusinessException(KatKatErrorCodes.LeaderboardScopeRequired);
+        }
+
+        var cacheKey = BuildLeaderboardCacheKey(cityId, districtId, neighborhoodId, maxResultCount);
 
         var cached = await _leaderboardCache.GetAsync(cacheKey);
         if (cached != null)
@@ -270,7 +276,7 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
             return cached;
         }
 
-        var scores = await _complexScoreRepository.GetLeaderboardAsync(districtId, neighborhoodId, maxResultCount);
+        var scores = await _complexScoreRepository.GetLeaderboardAsync(cityId, districtId, neighborhoodId, maxResultCount);
         var result = await BuildLeaderboardAsync(scores.Select(score => (score, (double?)null)).ToList());
 
         await CacheLeaderboardAsync(cacheKey, result);
@@ -316,7 +322,7 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         var result = new List<DistrictLeaderboardDto>(districtIds.Count);
         foreach (var districtId in districtIds)
         {
-            var entries = await GetLeaderboardAsync(districtId, neighborhoodId: null, maxResultCountPerDistrict);
+            var entries = await GetLeaderboardAsync(cityId: null, districtId, neighborhoodId: null, maxResultCountPerDistrict);
             result.Add(new DistrictLeaderboardDto
             {
                 District = entries[0].District,
@@ -335,7 +341,7 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         var result = new List<NeighborhoodLeaderboardDto>(neighborhoodPairs.Count);
         foreach (var (districtId, neighborhoodId) in neighborhoodPairs)
         {
-            var entries = await GetLeaderboardAsync(districtId, neighborhoodId, maxResultCountPerNeighborhood);
+            var entries = await GetLeaderboardAsync(cityId: null, districtId, neighborhoodId, maxResultCountPerNeighborhood);
             result.Add(new NeighborhoodLeaderboardDto
             {
                 District = entries[0].District,
@@ -412,9 +418,9 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         });
     }
 
-    private static string BuildLeaderboardCacheKey(int? districtId, int? neighborhoodId, int maxResultCount)
+    private static string BuildLeaderboardCacheKey(int? cityId, int? districtId, int? neighborhoodId, int maxResultCount)
     {
-        return $"{districtId?.ToString() ?? AllFilterCacheKeyToken}:{neighborhoodId?.ToString() ?? AllFilterCacheKeyToken}:{maxResultCount}";
+        return $"{cityId?.ToString() ?? AllFilterCacheKeyToken}:{districtId?.ToString() ?? AllFilterCacheKeyToken}:{neighborhoodId?.ToString() ?? AllFilterCacheKeyToken}:{maxResultCount}";
     }
 
     private static string BuildNearbyLeaderboardCacheKey(
