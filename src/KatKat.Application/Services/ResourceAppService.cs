@@ -37,7 +37,7 @@ public class ResourceAppService : KatKatAppService, IResourceAppService
     {
         var resource = await _resourceManager.CreateAsync(input.ComplexId, input.Name, input.Type);
 
-        await _resourceRepository.InsertAsync(resource);
+        await _resourceRepository.InsertAsync(resource, autoSave: true);
 
         return ObjectMapper.Map<Resource, ResourceDto>(resource);
     }

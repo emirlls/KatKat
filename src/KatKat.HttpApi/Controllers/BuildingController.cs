@@ -40,4 +40,14 @@ public class BuildingController : KatKatController, IBuildingAppService
     [HttpPost]
     [Authorize(KatKatPermissions.Buildings.Create)]
     public Task<BuildingDto> CreateAsync(CreateBuildingDto input) => _buildingAppService.CreateAsync(input);
+
+    /// <summary>Updates a Building's basic info (name, floor count).</summary>
+    [HttpPut("{id}")]
+    [Authorize(KatKatPermissions.Buildings.Update)]
+    public Task<BuildingDto> UpdateAsync(Guid id, UpdateBuildingDto input) => _buildingAppService.UpdateAsync(id, input);
+
+    /// <summary>Deletes a Building.</summary>
+    [HttpDelete("{id}")]
+    [Authorize(KatKatPermissions.Buildings.Delete)]
+    public Task DeleteAsync(Guid id) => _buildingAppService.DeleteAsync(id);
 }

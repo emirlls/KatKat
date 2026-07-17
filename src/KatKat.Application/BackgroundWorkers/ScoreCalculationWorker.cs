@@ -24,7 +24,6 @@ public class ScoreCalculationWorker : AsyncPeriodicBackgroundWorkerBase
 {
     private const int TargetHour = 3;
     private const int CheckIntervalMinutes = 30;
-    private const int TrailingWindowDays = 30;
 
     private DateTime? _lastRunDate;
 
@@ -55,7 +54,7 @@ public class ScoreCalculationWorker : AsyncPeriodicBackgroundWorkerBase
             complexes = await complexRepository.GetListAsync();
         }
 
-        var since = DateTime.UtcNow.AddDays(-TrailingWindowDays);
+        var since = DateTime.UtcNow.AddDays(-ScoreManager.TrailingWindowDays);
 
         foreach (var complex in complexes)
         {
@@ -63,21 +62,7 @@ public class ScoreCalculationWorker : AsyncPeriodicBackgroundWorkerBase
             using var uow = unitOfWorkManager.Begin();
 
             var scoreManager = workerContext.ServiceProvider.GetRequiredService<ScoreManager>();
-            var financialScore = await scoreManager.CalculateFinancialScoreAsync(complex.Id, since);
-            var socialScore = await scoreManager.CalculateSocialScoreAsync(complex.Id, since);
-            var resolutionScore = await scoreManager.CalculateResolutionScoreAsync(complex.Id, since);
-
-            await scoreManager.UpsertAsync(
-                complex.Id,
-                complex.TenantId!.Value,
-                complex.Name,
-                complex.NeighborhoodId,
-                complex.Latitude,
-                complex.Longitude,
-                financialScore,
-                socialScore,
-                resolutionScore
-            );
+            await scoreManager.RecalculateAsync(complex, since);
 
             await uow.CompleteAsync();
         }

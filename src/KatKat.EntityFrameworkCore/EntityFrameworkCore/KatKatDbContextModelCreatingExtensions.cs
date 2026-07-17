@@ -240,5 +240,19 @@ public static class KatKatDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.ComplexId, x.CreationTime });
             b.HasIndex(x => x.FlatId);
         });
+
+        builder.Entity<ResidentInvitation>(b =>
+        {
+            b.ToTable(KatKatDbProperties.DbTablePrefix + ResidentInvitationConsts.TableName, KatKatDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Code).IsRequired().HasMaxLength(ResidentInvitationConsts.CodeLength);
+
+            b.HasOne<Flat>().WithMany().HasForeignKey(x => x.FlatId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+
+            b.HasIndex(x => x.Code).IsUnique();
+            b.HasIndex(x => x.FlatId);
+        });
     }
 }

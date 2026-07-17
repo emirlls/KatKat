@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using KatKat.Dtos;
 using KatKat.P2PRequests;
+using KatKat.Permissions;
 using KatKat.RateLimiting;
 using KatKat.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 
@@ -35,8 +37,9 @@ public class P2PRequestController : KatKatController, IP2PRequestAppService
     public Task<List<P2PRequestDto>> GetListByComplexAsync(Guid complexId, P2PRequestStatus? status = null) =>
         _p2pRequestAppService.GetListByComplexAsync(complexId, status);
 
-    /// <summary>Creates a new P2P request and pushes it to opted-in neighbors in real time.</summary>
+    /// <summary>Creates a new P2P request and pushes it to opted-in neighbors in real time (residents and managers).</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.P2PRequests.Create)]
     public Task<P2PRequestDto> CreateAsync(CreateP2PRequestDto input) => _p2pRequestAppService.CreateAsync(input);
 
     /// <summary>Marks a request as fulfilled by the current user (feeds the Social Score).</summary>

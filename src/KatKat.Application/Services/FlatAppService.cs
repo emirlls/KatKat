@@ -7,6 +7,7 @@ using KatKat.Dtos;
 using KatKat.Entities;
 using KatKat.Permissions;
 using KatKat.Repositories;
+using Volo.Abp.Users;
 
 namespace KatKat.Services;
 
@@ -37,8 +38,32 @@ public class FlatAppService : KatKatAppService, IFlatAppService
     {
         var flat = await _flatManager.CreateAsync(input.BuildingId, input.FlatNumber, input.FloorNumber, input.ShareFactor);
 
-        await _flatRepository.InsertAsync(flat);
+        await _flatRepository.InsertAsync(flat, autoSave: true);
 
         return ObjectMapper.Map<Flat, FlatDto>(flat);
+    }
+
+    public async Task<FlatDto> UpdateAsync(Guid id, UpdateFlatDto input)
+    {
+        var flat = await _flatRepository.GetAsync(id);
+
+        flat.SetFlatNumber(input.FlatNumber);
+        flat.SetFloorNumber(input.FloorNumber);
+        flat.SetShareFactor(input.ShareFactor);
+
+        await _flatRepository.UpdateAsync(flat);
+
+        return ObjectMapper.Map<Flat, FlatDto>(flat);
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        await _flatRepository.DeleteAsync(id);
+    }
+
+    public async Task<List<FlatDto>> GetMyFlatsAsync(Guid complexId)
+    {
+        var flats = await _flatRepository.GetListByUserAndComplexAsync(CurrentUser.GetId(), complexId);
+        return flats.Select(f => ObjectMapper.Map<Flat, FlatDto>(f)).ToList();
     }
 }

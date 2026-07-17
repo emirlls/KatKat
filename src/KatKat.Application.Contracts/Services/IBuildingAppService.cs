@@ -13,4 +13,8 @@ public interface IBuildingAppService : IApplicationService
     Task<List<BuildingDto>> GetListByComplexAsync(Guid complexId);
 
     Task<BuildingDto> CreateAsync(CreateBuildingDto input);
+
+    Task<BuildingDto> UpdateAsync(Guid id, UpdateBuildingDto input);
+
+    Task DeleteAsync(Guid id);
 }

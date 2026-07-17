@@ -1,25 +1,49 @@
-version: '3.4'
-
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server
+  postgres:
+    image: postgres:17-alpine
+    container_name: katkat-postgres
+    environment:
+      POSTGRES_DB: KatKat
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: myPassword
     volumes:
-      - dbdata:/var/opt/mssql
-  
-  identity-server:
+      - katkat_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d KatKat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: katkat-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - katkat_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
     build:
-      context: ../../
-      dockerfile: templates/service/host/IdentityServerHost/Dockerfile
+      context: .
+      dockerfile: host/KatKat.HttpApi.Host/Dockerfile
+    container_name: katkat-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+    ports:
+      - "127.0.0.1:8080:8080"
     depends_on:
-      - sqlserver      
-  
-  kat-kat:
-    build:
-      context: ../../
-      dockerfile: templates/service/host/KatKat.Host/Dockerfile
-    depends_on:
-      - sqlserver
-      - identity-server
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
-  dbdata:
+  katkat_postgres_data:
+  katkat_redis_data:

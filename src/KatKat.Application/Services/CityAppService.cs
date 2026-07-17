@@ -38,7 +38,7 @@ public class CityAppService : KatKatAppService, ICityAppService
     public async Task<CityDto> CreateAsync(CreateCityDto input)
     {
         var city = await _cityManager.CreateAsync(input.Name);
-        await _cityRepository.InsertAsync(city);
+        await _cityRepository.InsertAsync(city, autoSave: true);
         return ObjectMapper.Map<City, CityDto>(city);
     }
 

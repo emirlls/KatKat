@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+.git/
+.claude/
+.github/
+test/
+**/Logs/
+*.md
+*.user
+**/appsettings.secrets.json

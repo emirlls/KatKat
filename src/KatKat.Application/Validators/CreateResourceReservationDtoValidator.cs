@@ -11,8 +11,9 @@ public class CreateResourceReservationDtoValidator : AbstractValidator<CreateRes
     public CreateResourceReservationDtoValidator(IStringLocalizer<KatKatResource> localizer)
     {
         RuleFor(x => x.ResourceId).NotEmpty();
+        // Allow start == end (a single-instant/day booking); only reject an end strictly before start.
         RuleFor(x => x.EndTime)
-            .GreaterThan(x => x.StartTime)
+            .GreaterThanOrEqualTo(x => x.StartTime)
             .WithMessage(_ => localizer[ValidationErrorCodes.ResourceReservation.EndTimeMustBeAfterStartTime]);
     }
 }

@@ -54,7 +54,7 @@ public class DistrictAppService : KatKatAppService, IDistrictAppService
     public async Task<DistrictDto> CreateAsync(CreateDistrictDto input)
     {
         var district = await _districtManager.CreateAsync(input.CityId, input.Name);
-        await _districtRepository.InsertAsync(district);
+        await _districtRepository.InsertAsync(district, autoSave: true);
         return await MapWithCityAsync(district);
     }
 

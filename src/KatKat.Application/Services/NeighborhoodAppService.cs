@@ -54,7 +54,7 @@ public class NeighborhoodAppService : KatKatAppService, INeighborhoodAppService
     public async Task<NeighborhoodDto> CreateAsync(CreateNeighborhoodDto input)
     {
         var neighborhood = await _neighborhoodManager.CreateAsync(input.DistrictId, input.Name);
-        await _neighborhoodRepository.InsertAsync(neighborhood);
+        await _neighborhoodRepository.InsertAsync(neighborhood, autoSave: true);
         return await MapWithDistrictAsync(neighborhood);
     }
 

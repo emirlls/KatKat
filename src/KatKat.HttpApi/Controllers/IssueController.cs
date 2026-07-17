@@ -37,8 +37,9 @@ public class IssueController : KatKatController, IIssueAppService
     public Task<List<IssueDto>> GetListByComplexAsync(Guid complexId, IssueStatuses? status = null) =>
         _issueAppService.GetListByComplexAsync(complexId, status);
 
-    /// <summary>Reports a new issue as the current user.</summary>
+    /// <summary>Reports a new issue as the current user (residents and managers).</summary>
     [HttpPost]
+    [Authorize(KatKatPermissions.Issues.Create)]
     public Task<IssueDto> CreateAsync(CreateIssueDto input) => _issueAppService.CreateAsync(input);
 
     /// <summary>Manager-only: marks an open issue as being worked on.</summary>

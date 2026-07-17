@@ -13,16 +13,24 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
         var complexes = myGroup.AddPermission(KatKatPermissions.Complexes.Default, L("Permission:Complexes"));
         complexes.AddChild(KatKatPermissions.Complexes.Create, L("Permission:Complexes.Create"));
         complexes.AddChild(KatKatPermissions.Complexes.Update, L("Permission:Complexes.Update"));
+        complexes.AddChild(KatKatPermissions.Complexes.Delete, L("Permission:Complexes.Delete"));
 
         var buildings = myGroup.AddPermission(KatKatPermissions.Buildings.Default, L("Permission:Buildings"));
         buildings.AddChild(KatKatPermissions.Buildings.Create, L("Permission:Buildings.Create"));
+        buildings.AddChild(KatKatPermissions.Buildings.Update, L("Permission:Buildings.Update"));
+        buildings.AddChild(KatKatPermissions.Buildings.Delete, L("Permission:Buildings.Delete"));
 
         var flats = myGroup.AddPermission(KatKatPermissions.Flats.Default, L("Permission:Flats"));
         flats.AddChild(KatKatPermissions.Flats.Create, L("Permission:Flats.Create"));
+        flats.AddChild(KatKatPermissions.Flats.Update, L("Permission:Flats.Update"));
+        flats.AddChild(KatKatPermissions.Flats.Delete, L("Permission:Flats.Delete"));
 
         var flatMembers = myGroup.AddPermission(KatKatPermissions.FlatMembers.Default, L("Permission:FlatMembers"));
         flatMembers.AddChild(KatKatPermissions.FlatMembers.Approve, L("Permission:FlatMembers.Approve"));
         flatMembers.AddChild(KatKatPermissions.FlatMembers.PromoteToManager, L("Permission:FlatMembers.PromoteToManager"));
+        flatMembers.AddChild(KatKatPermissions.FlatMembers.Invite, L("Permission:FlatMembers.Invite"));
+        flatMembers.AddChild(KatKatPermissions.FlatMembers.Remove, L("Permission:FlatMembers.Remove"));
+        flatMembers.AddChild(KatKatPermissions.FlatMembers.UpdateResidentInfo, L("Permission:FlatMembers.UpdateResidentInfo"));
 
         var p2pRequests = myGroup.AddPermission(KatKatPermissions.P2PRequests.Default, L("Permission:P2PRequests"));
         p2pRequests.AddChild(KatKatPermissions.P2PRequests.Create, L("Permission:P2PRequests.Create"));
@@ -39,6 +47,7 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
 
         var resourceReservations = myGroup.AddPermission(KatKatPermissions.ResourceReservations.Default, L("Permission:ResourceReservations"));
         resourceReservations.AddChild(KatKatPermissions.ResourceReservations.Create, L("Permission:ResourceReservations.Create"));
+        resourceReservations.AddChild(KatKatPermissions.ResourceReservations.Approve, L("Permission:ResourceReservations.Approve"));
 
         var sosAlerts = myGroup.AddPermission(KatKatPermissions.SosAlerts.Default, L("Permission:SosAlerts"));
         sosAlerts.AddChild(KatKatPermissions.SosAlerts.Resolve, L("Permission:SosAlerts.Resolve"));

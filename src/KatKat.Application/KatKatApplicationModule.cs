@@ -9,6 +9,7 @@ using Volo.Abp.FluentValidation;
 using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.TenantManagement;
 
 namespace KatKat;
 
@@ -20,7 +21,8 @@ namespace KatKat;
     typeof(AbpFluentValidationModule),
     typeof(AbpAspNetCoreSignalRModule),
     typeof(AbpBackgroundWorkersModule),
-    typeof(AbpMultiTenancyModule)
+    typeof(AbpMultiTenancyModule),
+    typeof(AbpTenantManagementDomainModule)
     )]
 public class KatKatApplicationModule : AbpModule
 {

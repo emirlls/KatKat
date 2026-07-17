@@ -8,6 +8,9 @@ public static class KatKatConsts
 {
     public const int DefaultLeaderboardMaxResultCount = 20;
 
+    /// <summary>Default page size for Complex/Flat/etc search-by-filter endpoints.</summary>
+    public const int DefaultSearchMaxResultCount = 20;
+
     /// <summary>Precision/scale shared by every 0-100 KatKat Score column (e.g. 100.00).</summary>
     public const int ScorePrecision = 5;
     public const int ScoreScale = 2;

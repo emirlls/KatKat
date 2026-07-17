@@ -20,8 +20,8 @@ public class ComplexManager : DomainService
     }
 
     /// <summary>
-    /// Creates the root Complex for the tenant currently in scope. Must be called right
-    /// after the tenant itself has been created and switched into (see Onboarding Workflow).
+    /// Creates a Complex owned by the tenant currently in scope, or by the host if
+    /// multi-tenancy is disabled (see MultiTenancyConsts.IsEnabled).
     /// </summary>
     public virtual async Task<Complex> CreateAsync(
         string name,
@@ -31,8 +31,7 @@ public class ComplexManager : DomainService
         decimal longitude,
         DateTime subscriptionStartDate)
     {
-        var tenantId = CurrentTenant.Id
-            ?? throw new BusinessException(KatKatErrorCodes.ComplexMustBeCreatedInsideTenantScope);
+        var tenantId = CurrentTenant.Id;
 
         if (await _complexRepository.NameExistsAsync(name))
         {

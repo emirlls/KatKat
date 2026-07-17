@@ -31,6 +31,13 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual DateTime? SubscriptionEndDate { get; protected set; }
 
+    /// <summary>
+    /// Admin-only operational control, distinct from the subscription/billing period above - lets
+    /// the platform admin suspend a site's public visibility (leaderboards/nearby-map) without
+    /// touching its subscription or any of its own data.
+    /// </summary>
+    public virtual bool IsActive { get; protected set; } = true;
+
     protected Complex()
     {
         /* EF Core */
@@ -38,7 +45,7 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     internal Complex(
         Guid id,
-        Guid tenantId,
+        Guid? tenantId,
         string name,
         int neighborhoodId,
         string? address,
@@ -53,6 +60,17 @@ public class Complex : FullAuditedAggregateRoot<Guid>, IMultiTenant
         SetAddress(address);
         SetLocation(latitude, longitude);
         SubscriptionStartDate = subscriptionStartDate;
+        IsActive = true;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
     }
 
     public void SetName(string name)

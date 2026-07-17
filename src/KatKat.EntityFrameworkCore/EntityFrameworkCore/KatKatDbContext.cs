@@ -40,6 +40,8 @@ public class KatKatDbContext : AbpDbContext<KatKatDbContext>, IKatKatDbContext
 
     public DbSet<Neighborhood> Neighborhoods { get; set; } = null!;
 
+    public DbSet<ResidentInvitation> ResidentInvitations { get; set; } = null!;
+
     public KatKatDbContext(DbContextOptions<KatKatDbContext> options)
         : base(options)
     {

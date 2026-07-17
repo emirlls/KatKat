@@ -10,5 +10,7 @@ public class FlatMemberDto : FullAuditedEntityDto<Guid>
 
     public Guid UserId { get; set; }
 
+    public string UserName { get; set; } = null!;
+
     public FlatMemberRole Role { get; set; }
 }

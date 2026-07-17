@@ -11,13 +11,19 @@ using KatKat.Settings;
 using Microsoft.Extensions.Caching.Distributed;
 using Volo.Abp;
 using Volo.Abp.Caching;
+using Volo.Abp.Identity;
 using Volo.Abp.Settings;
 
 namespace KatKat.Services;
 
 public class ComplexAppService : KatKatAppService, IComplexAppService
 {
-    private const int LeaderboardCacheMinutes = 15;
+    /// <summary>
+    /// Kept short (rather than a longer production-style TTL) so a manual score recalculation
+    /// shows up in the leaderboard/map almost immediately - this app has no fine-grained cache
+    /// invalidation for every possible district/neighborhood/coordinate cache key.
+    /// </summary>
+    private const int LeaderboardCacheMinutes = 2;
 
     /// <summary>Placeholder used in a cache key wherever a district/neighborhood filter is null (i.e. "no filter").</summary>
     private const string AllFilterCacheKeyToken = "all";
@@ -27,21 +33,36 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
     private readonly IComplexRepository _complexRepository;
     private readonly IComplexScoreRepository _complexScoreRepository;
     private readonly ComplexManager _complexManager;
+    private readonly ScoreManager _scoreManager;
     private readonly IDistributedCache<List<LeaderboardDto>> _leaderboardCache;
     private readonly LocationLookupResolver _locationLookupResolver;
+    private readonly IBuildingRepository _buildingRepository;
+    private readonly IFlatRepository _flatRepository;
+    private readonly IFlatMemberRepository _flatMemberRepository;
+    private readonly IIdentityUserRepository _identityUserRepository;
 
     public ComplexAppService(
         IComplexRepository complexRepository,
         IComplexScoreRepository complexScoreRepository,
         ComplexManager complexManager,
+        ScoreManager scoreManager,
         IDistributedCache<List<LeaderboardDto>> leaderboardCache,
-        LocationLookupResolver locationLookupResolver)
+        LocationLookupResolver locationLookupResolver,
+        IBuildingRepository buildingRepository,
+        IFlatRepository flatRepository,
+        IFlatMemberRepository flatMemberRepository,
+        IIdentityUserRepository identityUserRepository)
     {
         _complexRepository = complexRepository;
         _complexScoreRepository = complexScoreRepository;
         _complexManager = complexManager;
+        _scoreManager = scoreManager;
         _leaderboardCache = leaderboardCache;
         _locationLookupResolver = locationLookupResolver;
+        _buildingRepository = buildingRepository;
+        _flatRepository = flatRepository;
+        _flatMemberRepository = flatMemberRepository;
+        _identityUserRepository = identityUserRepository;
     }
 
     public async Task<ComplexDto> GetAsync(Guid id)
@@ -50,12 +71,45 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         return await MapToComplexDtoAsync(complex);
     }
 
+    public async Task<ComplexDto?> GetMyComplexAsync()
+    {
+        // GetListAsync is transparently filtered to the current Tenant by ABP's IMultiTenant
+        // query filter, so this only ever returns the caller's own site - a Manager/Resident
+        // never picks a Complex, they just have (at most) one.
+        var complexes = await _complexRepository.GetListAsync();
+        var complex = complexes.FirstOrDefault();
+
+        return complex == null ? null : await MapToComplexDtoAsync(complex);
+    }
+
+    public async Task<List<ComplexDto>> SearchAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount)
+    {
+        var complexes = await _complexRepository.SearchAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
+        return await MapToComplexDtosAsync(complexes);
+    }
+
+    public async Task<List<AdminComplexListItemDto>> SearchAcrossAllTenantsAsync(
+        int? cityId = null, int? districtId = null, int? neighborhoodId = null, string? name = null,
+        int maxResultCount = KatKatConsts.DefaultSearchMaxResultCount)
+    {
+        var complexes = await _complexRepository.SearchAcrossAllTenantsAsync(cityId, districtId, neighborhoodId, name, maxResultCount);
+        var complexDtos = await MapToComplexDtosAsync(complexes);
+
+        return complexes.Zip(complexDtos, (complex, dto) => new AdminComplexListItemDto
+        {
+            Complex = dto,
+            TenantId = complex.TenantId,
+        }).ToList();
+    }
+
     public async Task<ComplexDto> CreateAsync(CreateComplexDto input)
     {
         var complex = await _complexManager.CreateAsync(
             input.Name, input.NeighborhoodId, input.Address, input.Latitude, input.Longitude, input.SubscriptionStartDate);
 
-        await _complexRepository.InsertAsync(complex);
+        await _complexRepository.InsertAsync(complex, autoSave: true);
 
         return await MapToComplexDtoAsync(complex);
     }
@@ -74,6 +128,110 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         return await MapToComplexDtoAsync(complex);
     }
 
+    public async Task DeleteAsync(Guid id)
+    {
+        await _complexRepository.DeleteAsync(id);
+    }
+
+    public async Task<ComplexDto> UpdateAcrossTenantsAsync(Guid id, UpdateComplexDto input)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            complex.SetName(input.Name);
+            complex.SetNeighborhood(input.NeighborhoodId);
+            complex.SetAddress(input.Address);
+            complex.SetLocation(input.Latitude, input.Longitude);
+
+            await _complexRepository.UpdateAsync(complex);
+
+            return await MapToComplexDtoAsync(complex);
+        }
+    }
+
+    public async Task DeleteAcrossTenantsAsync(Guid id)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            await _complexRepository.DeleteAsync(id);
+        }
+    }
+
+    public async Task<ComplexDto> SetActiveAcrossTenantsAsync(Guid id, bool isActive)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            if (isActive)
+            {
+                complex.Activate();
+            }
+            else
+            {
+                complex.Deactivate();
+            }
+
+            await _complexRepository.UpdateAsync(complex);
+
+            return await MapToComplexDtoAsync(complex);
+        }
+    }
+
+    public async Task<AdminSiteDetailDto> GetDetailAcrossTenantsAsync(Guid id)
+    {
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
+
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            var complexDto = await MapToComplexDtoAsync(complex);
+
+            // Three batched queries (buildings, flats, flat members) regardless of how many
+            // buildings/flats the site has, instead of one query per building plus one per flat.
+            var buildings = await _buildingRepository.GetListByComplexAsync(id);
+            var flatsByBuildingId = (await _flatRepository.GetListByComplexAsync(id))
+                .GroupBy(f => f.BuildingId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+            var membersByFlatId = (await _flatMemberRepository.GetListByComplexAsync(id))
+                .GroupBy(m => m.FlatId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            // One batched lookup for every resident's username across the whole site, instead of
+            // one per flat.
+            var allUserIds = membersByFlatId.Values.SelectMany(m => m).Select(m => m.UserId).Distinct();
+            var users = await _identityUserRepository.GetListByIdsAsync(allUserIds);
+            var userNameById = users.ToDictionary(u => u.Id, u => u.UserName);
+
+            return new AdminSiteDetailDto
+            {
+                Complex = complexDto,
+                TenantId = complex.TenantId,
+                Buildings = buildings.Select(building => new AdminBuildingDetailDto
+                {
+                    Id = building.Id,
+                    Name = building.Name,
+                    FloorCount = building.FloorCount,
+                    Flats = flatsByBuildingId.GetValueOrDefault(building.Id, new List<Flat>()).Select(flat => new AdminFlatDetailDto
+                    {
+                        Id = flat.Id,
+                        FlatNumber = flat.FlatNumber,
+                        FloorNumber = flat.FloorNumber,
+                        ShareFactor = flat.ShareFactor,
+                        Residents = membersByFlatId.GetValueOrDefault(flat.Id, new List<FlatMember>()).Select(member => new AdminResidentDto
+                        {
+                            Id = member.Id,
+                            UserName = userNameById.GetValueOrDefault(member.UserId, member.UserId.ToString()),
+                            Role = member.Role,
+                        }).ToList(),
+                    }).ToList(),
+                }).ToList(),
+            };
+        }
+    }
+
     public async Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input)
     {
         var complex = await _complexRepository.GetAsync(id);
@@ -83,6 +241,21 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         await _complexRepository.UpdateAsync(complex);
 
         return await MapToComplexDtoAsync(complex);
+    }
+
+    public async Task RecalculateScoresAsync()
+    {
+        var complexes = await _complexRepository.GetListAsync();
+        var since = DateTime.UtcNow.AddDays(-ScoreManager.TrailingWindowDays);
+
+        foreach (var complex in complexes)
+        {
+            await _scoreManager.RecalculateAsync(complex, since);
+        }
+
+        // Only the no-filter "Genel" key can be invalidated deterministically here; every other
+        // permutation (per-district, per-neighborhood, per-coordinate) relies on the short TTL above.
+        await _leaderboardCache.RemoveAsync(BuildLeaderboardCacheKey(null, null, KatKatConsts.DefaultLeaderboardMaxResultCount));
     }
 
     public async Task<List<LeaderboardDto>> GetLeaderboardAsync(
@@ -176,16 +349,29 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
 
     private async Task<ComplexDto> MapToComplexDtoAsync(Complex complex)
     {
-        var dto = ObjectMapper.Map<Complex, ComplexDto>(complex);
+        return (await MapToComplexDtosAsync(new List<Complex> { complex }))[0];
+    }
 
-        var hierarchies = await _locationLookupResolver.ResolveNeighborhoodHierarchiesAsync(new[] { complex.NeighborhoodId });
-        var hierarchy = hierarchies[complex.NeighborhoodId];
+    /// <summary>Batches the City/District/Neighborhood hierarchy lookup for a whole list, avoiding N+1 queries.</summary>
+    private async Task<List<ComplexDto>> MapToComplexDtosAsync(List<Complex> complexes)
+    {
+        if (complexes.Count == 0)
+        {
+            return new List<ComplexDto>();
+        }
 
-        dto.City = hierarchy.City;
-        dto.District = hierarchy.District;
-        dto.Neighborhood = hierarchy.Neighborhood;
+        var hierarchies = await _locationLookupResolver.ResolveNeighborhoodHierarchiesAsync(
+            complexes.Select(c => c.NeighborhoodId));
 
-        return dto;
+        return complexes.Select(complex =>
+        {
+            var dto = ObjectMapper.Map<Complex, ComplexDto>(complex);
+            var hierarchy = hierarchies[complex.NeighborhoodId];
+            dto.City = hierarchy.City;
+            dto.District = hierarchy.District;
+            dto.Neighborhood = hierarchy.Neighborhood;
+            return dto;
+        }).ToList();
     }
 
     /// <summary>Single place that turns a ranked score list into ranked (Rank starts at 1) DTOs, batch-resolving City/District/Neighborhood names so no leaderboard call does N+1 lookups.</summary>

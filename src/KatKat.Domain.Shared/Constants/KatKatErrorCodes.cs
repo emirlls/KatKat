@@ -2,10 +2,9 @@
 
 public static class KatKatErrorCodes
 {
-    private const string Prefix = "KatKat:";
+    public const string Prefix = "KatKat:";
 
     // Complex (01xxxx)
-    public const string ComplexMustBeCreatedInsideTenantScope = Prefix + "010001";
     public const string ComplexNameAlreadyExists = Prefix + "010002";
     public const string SubscriptionEndDateMustBeLaterThanCurrentEndDate = Prefix + "010003";
     public const string ComplexLatitudeOutOfRange = Prefix + "010004";
@@ -14,6 +13,7 @@ public static class KatKatErrorCodes
     // Building (02xxxx)
     public const string BuildingNameAlreadyExistsInComplex = Prefix + "020001";
     public const string BuildingFloorCountMustBePositive = Prefix + "020002";
+    public const string BuildingHasFlatsCannotBeDeleted = Prefix + "020003";
 
     // Flat (03xxxx)
     public const string FlatNumberAlreadyExistsInBuilding = Prefix + "030001";
@@ -42,8 +42,9 @@ public static class KatKatErrorCodes
     // Resource / ResourceReservation (08xxxx)
     public const string ReservationEndTimeMustBeAfterStartTime = Prefix + "080001";
     public const string ReservationOverlapsWithAnExistingReservation = Prefix + "080002";
-    public const string ReservationMustBeConfirmedToCancel = Prefix + "080003";
+    public const string ReservationCannotBeCancelled = Prefix + "080003";
     public const string ReservationCanOnlyBeCancelledByReserver = Prefix + "080004";
+    public const string ReservationMustBePendingToDecide = Prefix + "080005";
 
     // SosAlert (09xxxx)
     public const string SosAlertMustBeHelpNeededToResolve = Prefix + "090001";
@@ -58,4 +59,8 @@ public static class KatKatErrorCodes
     public const string CityHasDistrictsCannotBeDeleted = Prefix + "110004";
     public const string DistrictHasNeighborhoodsCannotBeDeleted = Prefix + "110005";
     public const string NeighborhoodInUseByComplexCannotBeDeleted = Prefix + "110006";
+
+    // ResidentInvitation (12xxxx)
+    public const string ResidentInvitationAlreadyUsed = Prefix + "120001";
+    public const string ResidentInvitationExpired = Prefix + "120002";
 }

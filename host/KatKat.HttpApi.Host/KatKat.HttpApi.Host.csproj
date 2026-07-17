@@ -25,8 +25,13 @@
     <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.0.0" />
     <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.0.0" />
     <PackageReference Include="Volo.Abp.PermissionManagement.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="10.0.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Volo.Abp.TenantManagement.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Volo.Abp.Identity.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Volo.Abp.Identity.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Volo.Abp.OpenIddict.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Volo.Abp.OpenIddict.AspNetCore" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
