@@ -60,11 +60,15 @@ public class P2PRequestAppService : KatKatAppService, IP2PRequestAppService
 
         request.Fulfill(CurrentUser.GetId());
 
-        await _p2pRequestRepository.UpdateAsync(request);
+        // autoSave: true - RecalculateScoreSafelyAsync below re-queries fulfilled-request counts
+        // from the database itself, so this update must actually be flushed first or the count
+        // (and therefore the Social score) would be computed against the pre-fulfillment state.
+        await _p2pRequestRepository.UpdateAsync(request, autoSave: true);
 
         var dto = ObjectMapper.Map<P2PRequest, P2PRequestDto>(request);
 
         await _hubNotifier.NotifyP2PRequestEventAsync(request.ComplexId, KatKatHubConsts.EventNames.P2PRequestFulfilled, dto);
+        await RecalculateScoreSafelyAsync(request.ComplexId);
 
         return dto;
     }

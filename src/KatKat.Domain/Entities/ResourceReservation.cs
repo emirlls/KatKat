@@ -26,6 +26,9 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual ReservationStatus Status { get; protected set; }
 
+    /// <summary>The manager's reason for declining - only ever set by <see cref="Reject"/>.</summary>
+    public virtual string? RejectionReason { get; protected set; }
+
     protected ResourceReservation()
     {
         /* EF Core */
@@ -66,8 +69,8 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Status = ReservationStatus.Confirmed;
     }
 
-    /// <summary>Manager decision: decline the pending request.</summary>
-    public void Reject()
+    /// <summary>Manager decision: decline the pending request, with a reason shown to the reserver.</summary>
+    public void Reject(string reason)
     {
         if (Status != ReservationStatus.Pending)
         {
@@ -75,6 +78,7 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
         }
 
         Status = ReservationStatus.Rejected;
+        RejectionReason = reason;
     }
 
     public void Cancel()

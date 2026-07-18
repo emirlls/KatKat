@@ -18,8 +18,8 @@ public interface IResourceReservationAppService : IApplicationService
     /// <summary>Manager-only: approves a pending reservation (re-checks overlap), notifying the reserver.</summary>
     Task<ResourceReservationDto> ApproveAsync(Guid id);
 
-    /// <summary>Manager-only: rejects a pending reservation, notifying the reserver.</summary>
-    Task<ResourceReservationDto> RejectAsync(Guid id);
+    /// <summary>Manager-only: rejects a pending reservation with a reason, notifying the reserver.</summary>
+    Task<ResourceReservationDto> RejectAsync(Guid id, RejectResourceReservationDto input);
 
     Task<ResourceReservationDto> CancelAsync(Guid id);
 }

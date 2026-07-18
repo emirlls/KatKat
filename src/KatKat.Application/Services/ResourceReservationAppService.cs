@@ -77,11 +77,11 @@ public class ResourceReservationAppService : KatKatAppService, IResourceReservat
         return dto;
     }
 
-    public async Task<ResourceReservationDto> RejectAsync(Guid id)
+    public async Task<ResourceReservationDto> RejectAsync(Guid id, RejectResourceReservationDto input)
     {
         var reservation = await _resourceReservationRepository.GetAsync(id);
 
-        reservation.Reject();
+        reservation.Reject(input.Reason);
         await _resourceReservationRepository.UpdateAsync(reservation);
 
         var dto = ObjectMapper.Map<ResourceReservation, ResourceReservationDto>(reservation);

@@ -35,13 +35,20 @@ public class ScoreManager : DomainService
     /// <summary>Points deducted per day an expense share is paid late, floored at 0.</summary>
     public const decimal FinancialScorePenaltyPerDelayDay = 10m;
 
-    /// <summary>Points deducted per hour an issue takes to resolve, floored at 0.</summary>
-    public const decimal ResolutionScorePenaltyPerDelayHour = 1m;
+    /// <summary>
+    /// Points deducted per day an issue takes to resolve, floored at 0 - kept equal to
+    /// <see cref="FinancialScorePenaltyPerDelayDay"/> so the two "how long did residents have to
+    /// wait" metrics are calibrated the same way. Was previously 1 point per HOUR (i.e. 24x
+    /// harsher than Financial's per-day rate for the same real-world wait), which meant even a
+    /// promptly-resolved issue (a day or two) crushed the Resolution sub-score toward 0.
+    /// </summary>
+    public const decimal ResolutionScorePenaltyPerDelayDay = 10m;
 
     private readonly IComplexScoreRepository _complexScoreRepository;
     private readonly IP2PRequestRepository _p2pRequestRepository;
     private readonly IExpenseShareRepository _expenseShareRepository;
     private readonly IIssueRepository _issueRepository;
+    private readonly IComplexRepository _complexRepository;
     private readonly LocationHierarchyResolver _locationHierarchyResolver;
 
     public ScoreManager(
@@ -49,12 +56,14 @@ public class ScoreManager : DomainService
         IP2PRequestRepository p2pRequestRepository,
         IExpenseShareRepository expenseShareRepository,
         IIssueRepository issueRepository,
+        IComplexRepository complexRepository,
         LocationHierarchyResolver locationHierarchyResolver)
     {
         _complexScoreRepository = complexScoreRepository;
         _p2pRequestRepository = p2pRequestRepository;
         _expenseShareRepository = expenseShareRepository;
         _issueRepository = issueRepository;
+        _complexRepository = complexRepository;
         _locationHierarchyResolver = locationHierarchyResolver;
     }
 
@@ -91,7 +100,7 @@ public class ScoreManager : DomainService
 
     /// <summary>
     /// Normalizes average issue resolution delay to a 0-100 score:
-    /// 100 minus <see cref="ResolutionScorePenaltyPerDelayHour"/> point per hour taken, floored at 0.
+    /// 100 minus <see cref="ResolutionScorePenaltyPerDelayDay"/> points per day taken, floored at 0.
     /// </summary>
     public virtual async Task<decimal> CalculateResolutionScoreAsync(Guid complexId, DateTime since)
     {
@@ -101,7 +110,8 @@ public class ScoreManager : DomainService
             return DefaultScoreWhenNoData;
         }
 
-        return Math.Max(MinScore, MaxScore - (averageResolutionHours.Value * ResolutionScorePenaltyPerDelayHour));
+        var averageResolutionDays = averageResolutionHours.Value / 24m;
+        return Math.Max(MinScore, MaxScore - (averageResolutionDays * ResolutionScorePenaltyPerDelayDay));
     }
 
     public virtual async Task<ComplexScore> UpsertAsync(
@@ -162,5 +172,17 @@ public class ScoreManager : DomainService
         return await UpsertAsync(
             complex.Id, complex.TenantId, complex.Name, complex.NeighborhoodId,
             complex.Latitude, complex.Longitude, financialScore, socialScore, resolutionScore, complex.IsActive);
+    }
+
+    /// <summary>
+    /// Recalculates a single Complex's Score right now, by id - lets a scoring-relevant action
+    /// (a P2P request fulfilled, an issue resolved, an expense share paid) refresh the score
+    /// immediately instead of the resident/manager having to wait for the once-daily worker.
+    /// </summary>
+    public virtual async Task RecalculateByComplexIdAsync(Guid complexId)
+    {
+        var complex = await _complexRepository.GetAsync(complexId);
+        var since = DateTime.UtcNow.AddDays(-TrailingWindowDays);
+        await RecalculateAsync(complex, since);
     }
 }

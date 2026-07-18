@@ -75,11 +75,15 @@ public class IssueAppService : KatKatAppService, IIssueAppService
 
         issue.Resolve(CurrentUser.GetId());
 
-        await _issueRepository.UpdateAsync(issue);
+        // autoSave: true - RecalculateScoreSafelyAsync below re-queries resolution delays from the
+        // database itself, so this update must actually be flushed first or the just-resolved
+        // issue wouldn't be counted yet.
+        await _issueRepository.UpdateAsync(issue, autoSave: true);
 
         var dto = ObjectMapper.Map<Issue, IssueDto>(issue);
 
         await BroadcastAsync(issue.ComplexId, KatKatHubConsts.EventNames.IssueResolved, dto);
+        await RecalculateScoreSafelyAsync(issue.ComplexId);
 
         return dto;
     }

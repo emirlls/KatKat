@@ -15,4 +15,6 @@ public class ResourceReservationDto : FullAuditedEntityDto<Guid>
     public DateTime EndTime { get; set; }
 
     public ReservationStatus Status { get; set; }
+
+    public string? RejectionReason { get; set; }
 }
