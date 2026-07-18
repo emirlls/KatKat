@@ -48,10 +48,11 @@ public class ResourceReservationController : KatKatController, IResourceReservat
     [Authorize(KatKatPermissions.ResourceReservations.Approve)]
     public Task<ResourceReservationDto> ApproveAsync(Guid id) => _resourceReservationAppService.ApproveAsync(id);
 
-    /// <summary>Manager-only: rejects a pending reservation.</summary>
+    /// <summary>Manager-only: rejects a pending reservation with a reason.</summary>
     [HttpPost("{id}/reject")]
     [Authorize(KatKatPermissions.ResourceReservations.Approve)]
-    public Task<ResourceReservationDto> RejectAsync(Guid id) => _resourceReservationAppService.RejectAsync(id);
+    public Task<ResourceReservationDto> RejectAsync(Guid id, RejectResourceReservationDto input) =>
+        _resourceReservationAppService.RejectAsync(id, input);
 
     /// <summary>Cancels a reservation - only the person who made it may do this.</summary>
     [HttpPost("{id}/cancel")]

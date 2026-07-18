@@ -11,7 +11,6 @@ public class KatKatPermissionDefinitionProvider : PermissionDefinitionProvider
         var myGroup = context.AddGroup(KatKatPermissions.GroupName, L("Permission:KatKat"));
 
         var complexes = myGroup.AddPermission(KatKatPermissions.Complexes.Default, L("Permission:Complexes"));
-        complexes.AddChild(KatKatPermissions.Complexes.Create, L("Permission:Complexes.Create"));
         complexes.AddChild(KatKatPermissions.Complexes.Update, L("Permission:Complexes.Update"));
         complexes.AddChild(KatKatPermissions.Complexes.Delete, L("Permission:Complexes.Delete"));
 

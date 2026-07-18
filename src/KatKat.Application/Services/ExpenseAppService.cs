@@ -81,7 +81,14 @@ public class ExpenseAppService : KatKatAppService, IExpenseAppService
         }
 
         share.MarkAsPaid();
-        await _expenseShareRepository.UpdateAsync(share);
+
+        // autoSave: true - RecalculateScoreSafelyAsync below re-queries payment delays from the
+        // database itself, so this update must actually be flushed first or the just-paid share
+        // wouldn't be counted yet.
+        await _expenseShareRepository.UpdateAsync(share, autoSave: true);
+
+        var expense = await _expenseRepository.GetAsync(share.ExpenseId);
+        await RecalculateScoreSafelyAsync(expense.ComplexId);
 
         return (await MapToShareDtosAsync(new List<ExpenseShare> { share }))[0];
     }

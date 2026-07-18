@@ -9,7 +9,6 @@ public class KatKatPermissions
     public static class Complexes
     {
         public const string Default = GroupName + ".Complexes";
-        public const string Create = Default + ".Create";
         public const string Update = Default + ".Update";
         public const string Delete = Default + ".Delete";
     }

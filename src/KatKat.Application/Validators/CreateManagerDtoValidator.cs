@@ -11,5 +11,6 @@ public class CreateManagerDtoValidator : AbstractValidator<CreateManagerDto>
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.PhoneNumber).NotEmpty();
         RuleFor(x => x.Password).NotEmpty();
+        RuleFor(x => x.Site).NotNull().SetValidator(new CreateComplexDtoValidator());
     }
 }

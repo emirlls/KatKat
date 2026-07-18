@@ -24,11 +24,13 @@ public class EfCoreComplexScoreRepository : KatKatEfCoreRepository<ComplexScore,
         return await dbSet.FirstOrDefaultAsync(x => x.ComplexId == complexId);
     }
 
-    public async Task<List<ComplexScore>> GetLeaderboardAsync(int? districtId, int? neighborhoodId, int maxResultCount)
+    public async Task<List<ComplexScore>> GetLeaderboardAsync(int? cityId, int? districtId, int? neighborhoodId, int maxResultCount)
     {
         var dbSet = await GetDbSetAsync();
         return await dbSet
             .Where(x =>
+                x.IsActive &&
+                (cityId == null || x.CityId == cityId) &&
                 (districtId == null || x.DistrictId == districtId) &&
                 (neighborhoodId == null || x.NeighborhoodId == neighborhoodId))
             .OrderByDescending(x => x.TotalScore)
@@ -51,6 +53,7 @@ public class EfCoreComplexScoreRepository : KatKatEfCoreRepository<ComplexScore,
         var dbSet = await GetDbSetAsync();
         var candidates = await dbSet
             .Where(x =>
+                x.IsActive &&
                 x.Latitude >= minLatitude && x.Latitude <= maxLatitude &&
                 x.Longitude >= minLongitude && x.Longitude <= maxLongitude)
             .ToListAsync();
@@ -67,6 +70,7 @@ public class EfCoreComplexScoreRepository : KatKatEfCoreRepository<ComplexScore,
     {
         var dbSet = await GetDbSetAsync();
         return await dbSet
+            .Where(x => x.IsActive)
             .Select(x => x.DistrictId)
             .Distinct()
             .ToListAsync();
@@ -76,6 +80,7 @@ public class EfCoreComplexScoreRepository : KatKatEfCoreRepository<ComplexScore,
     {
         var dbSet = await GetDbSetAsync();
         var pairs = await dbSet
+            .Where(x => x.IsActive)
             .Select(x => new { x.DistrictId, x.NeighborhoodId })
             .Distinct()
             .ToListAsync();
