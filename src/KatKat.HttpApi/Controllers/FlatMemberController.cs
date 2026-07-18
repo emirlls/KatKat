@@ -55,15 +55,4 @@ public class FlatMemberController : KatKatController, IFlatMemberAppService
     [HttpDelete("{id}")]
     [Authorize(KatKatPermissions.FlatMembers.Remove)]
     public Task DeleteAsync(Guid id) => _flatMemberAppService.DeleteAsync(id);
-
-    /// <summary>Manager-only: fetches a member's current username/email/phone, to pre-fill an edit form.</summary>
-    [HttpGet("{id}/resident-info")]
-    [Authorize(KatKatPermissions.FlatMembers.UpdateResidentInfo)]
-    public Task<UpdateResidentInfoDto> GetResidentInfoAsync(Guid id) => _flatMemberAppService.GetResidentInfoAsync(id);
-
-    /// <summary>Manager-only: corrects a member's username/email/phone (e.g. a data-entry mistake).</summary>
-    [HttpPut("{id}/resident-info")]
-    [Authorize(KatKatPermissions.FlatMembers.UpdateResidentInfo)]
-    public Task<FlatMemberDto> UpdateResidentInfoAsync(Guid id, UpdateResidentInfoDto input) =>
-        _flatMemberAppService.UpdateResidentInfoAsync(id, input);
 }

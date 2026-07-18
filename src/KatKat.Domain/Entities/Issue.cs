@@ -17,6 +17,9 @@ public class Issue : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual Guid ComplexId { get; protected set; }
 
+    /// <summary>Which Building the fault is in (e.g. "asansör arızası") - null for a complex-wide issue.</summary>
+    public virtual Guid? BuildingId { get; protected set; }
+
     public virtual Guid ReporterUserId { get; protected set; }
 
     public virtual string Title { get; protected set; } = null!;
@@ -40,6 +43,7 @@ public class Issue : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Guid id,
         Guid? tenantId,
         Guid complexId,
+        Guid? buildingId,
         Guid reporterUserId,
         string title,
         string? description,
@@ -48,6 +52,7 @@ public class Issue : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         TenantId = tenantId;
         ComplexId = complexId;
+        BuildingId = buildingId;
         ReporterUserId = reporterUserId;
         SetTitle(title);
         SetDescription(description);

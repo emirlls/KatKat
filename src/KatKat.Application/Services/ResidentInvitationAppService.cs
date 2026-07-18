@@ -55,7 +55,11 @@ public class ResidentInvitationAppService : KatKatAppService, IResidentInvitatio
         // has no tenant context of their own yet, this invitation is what grants them one.
         using (CurrentTenant.Change(invitation.TenantId))
         {
-            var user = new Volo.Abp.Identity.IdentityUser(_guidGenerator.Create(), input.UserName, input.Email, invitation.TenantId);
+            var user = new Volo.Abp.Identity.IdentityUser(_guidGenerator.Create(), input.UserName, input.Email, invitation.TenantId)
+            {
+                Name = input.Name,
+                Surname = input.Surname,
+            };
             user.SetPhoneNumber(input.PhoneNumber, confirmed: false);
             (await _userManager.CreateAsync(user, input.Password)).CheckErrors();
             (await _userManager.AddToRoleAsync(user, KatKatRoleConsts.ResidentRoleName)).CheckErrors();

@@ -39,6 +39,7 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
     private readonly IFlatRepository _flatRepository;
     private readonly IFlatMemberRepository _flatMemberRepository;
     private readonly IIdentityUserRepository _identityUserRepository;
+    private readonly IdentityUserManager _identityUserManager;
 
     public ComplexAppService(
         IComplexRepository complexRepository,
@@ -49,7 +50,8 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         IBuildingRepository buildingRepository,
         IFlatRepository flatRepository,
         IFlatMemberRepository flatMemberRepository,
-        IIdentityUserRepository identityUserRepository)
+        IIdentityUserRepository identityUserRepository,
+        IdentityUserManager identityUserManager)
     {
         _complexRepository = complexRepository;
         _complexScoreRepository = complexScoreRepository;
@@ -60,6 +62,7 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         _flatRepository = flatRepository;
         _flatMemberRepository = flatMemberRepository;
         _identityUserRepository = identityUserRepository;
+        _identityUserManager = identityUserManager;
     }
 
     public async Task<ComplexDto> GetAsync(Guid id)
@@ -229,15 +232,18 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
         }
     }
 
-    public async Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input)
+    public async Task<ComplexDto> ExtendSubscriptionAcrossAllTenantsAsync(Guid id, ExtendComplexSubscriptionDto input)
     {
-        var complex = await _complexRepository.GetAsync(id);
+        var complex = await _complexRepository.GetAcrossAllTenantsAsync(id);
 
-        complex.ExtendSubscription(input.NewEndDate);
+        using (CurrentTenant.Change(complex.TenantId))
+        {
+            complex.ExtendSubscription(input.NewEndDate);
 
-        await _complexRepository.UpdateAsync(complex);
+            await _complexRepository.UpdateAsync(complex);
 
-        return await MapToComplexDtoAsync(complex);
+            return await MapToComplexDtoAsync(complex);
+        }
     }
 
     public async Task RecalculateScoresAsync()
@@ -355,7 +361,32 @@ public class ComplexAppService : KatKatAppService, IComplexAppService
 
     private async Task<ComplexDto> MapToComplexDtoAsync(Complex complex)
     {
-        return (await MapToComplexDtosAsync(new List<Complex> { complex }))[0];
+        var dto = (await MapToComplexDtosAsync(new List<Complex> { complex }))[0];
+
+        dto.BuildingCount = (await _buildingRepository.GetListByComplexAsync(complex.Id)).Count;
+        dto.FlatCount = (await _flatRepository.GetListByComplexAsync(complex.Id)).Count;
+        dto.ManagerUserName = await FindManagerUserNameAsync();
+
+        return dto;
+    }
+
+    /// <summary>
+    /// The one Manager-role user belonging to the Complex's own Tenant (a Complex/Tenant pair is
+    /// always created with exactly one Manager) - shown as read-only "site info", not a lookup any
+    /// caller can use to enumerate arbitrary users.
+    /// </summary>
+    private async Task<string?> FindManagerUserNameAsync()
+    {
+        var users = await _identityUserRepository.GetListAsync();
+        foreach (var user in users)
+        {
+            if (await _identityUserManager.IsInRoleAsync(user, KatKatRoleConsts.ManagerRoleName))
+            {
+                return user.UserName;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Batches the City/District/Neighborhood hierarchy lookup for a whole list, avoiding N+1 queries.</summary>

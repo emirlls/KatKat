@@ -8,6 +8,11 @@ public class IssueDto : FullAuditedEntityDto<Guid>
 {
     public Guid ComplexId { get; set; }
 
+    public Guid? BuildingId { get; set; }
+
+    /// <summary>Denormalized from Building.Name - a raw Guid means nothing to a person reading the Issues board.</summary>
+    public string? BuildingName { get; set; }
+
     public Guid ReporterUserId { get; set; }
 
     public string Title { get; set; } = null!;

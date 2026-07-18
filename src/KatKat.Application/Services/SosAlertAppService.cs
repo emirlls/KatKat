@@ -17,15 +17,17 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
 {
     private readonly ISosAlertRepository _sosAlertRepository;
     private readonly IFlatRepository _flatRepository;
+    private readonly IBuildingRepository _buildingRepository;
     private readonly SosAlertManager _sosAlertManager;
     private readonly IHubContext<KatKatHub> _hubContext;
 
     public SosAlertAppService(
-        ISosAlertRepository sosAlertRepository, IFlatRepository flatRepository,
+        ISosAlertRepository sosAlertRepository, IFlatRepository flatRepository, IBuildingRepository buildingRepository,
         SosAlertManager sosAlertManager, IHubContext<KatKatHub> hubContext)
     {
         _sosAlertRepository = sosAlertRepository;
         _flatRepository = flatRepository;
+        _buildingRepository = buildingRepository;
         _sosAlertManager = sosAlertManager;
         _hubContext = hubContext;
     }
@@ -77,7 +79,7 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
         return (await MapToDtosAsync(new List<SosAlert> { alert }))[0];
     }
 
-    /// <summary>Batches the Flat -> FlatNumber lookup for a whole list, avoiding N+1 queries.</summary>
+    /// <summary>Batches the Flat -> FlatNumber and Flat -> Building -> Name lookups for a whole list, avoiding N+1 queries.</summary>
     private async Task<List<SosAlertDto>> MapToDtosAsync(List<SosAlert> alerts)
     {
         if (alerts.Count == 0)
@@ -86,12 +88,19 @@ public class SosAlertAppService : KatKatAppService, ISosAlertAppService
         }
 
         var flats = await _flatRepository.GetListByIdsAsync(alerts.Select(a => a.FlatId).Distinct());
-        var flatNumberById = flats.ToDictionary(f => f.Id, f => f.FlatNumber);
+        var flatById = flats.ToDictionary(f => f.Id);
+
+        var buildings = await _buildingRepository.GetListByIdsAsync(flats.Select(f => f.BuildingId).Distinct());
+        var buildingNameById = buildings.ToDictionary(b => b.Id, b => b.Name);
 
         return alerts.Select(alert =>
         {
             var dto = ObjectMapper.Map<SosAlert, SosAlertDto>(alert);
-            dto.FlatNumber = flatNumberById.GetValueOrDefault(alert.FlatId, alert.FlatId.ToString());
+            var flat = flatById.GetValueOrDefault(alert.FlatId);
+            dto.FlatNumber = flat?.FlatNumber ?? alert.FlatId.ToString();
+            dto.BuildingName = flat != null
+                ? buildingNameById.GetValueOrDefault(flat.BuildingId, flat.BuildingId.ToString())
+                : alert.FlatId.ToString();
             return dto;
         }).ToList();
     }

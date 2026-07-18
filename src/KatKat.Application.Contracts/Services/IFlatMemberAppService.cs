@@ -31,14 +31,4 @@ public interface IFlatMemberAppService : IApplicationService
     /// Manager-only: removes a member from the flat (e.g. they moved out).
     /// </summary>
     Task DeleteAsync(Guid id);
-
-    /// <summary>
-    /// Manager-only: fetches a member's current username/email/phone, to pre-fill an edit form.
-    /// </summary>
-    Task<UpdateResidentInfoDto> GetResidentInfoAsync(Guid id);
-
-    /// <summary>
-    /// Manager-only: corrects a member's username/email/phone (e.g. a data-entry mistake).
-    /// </summary>
-    Task<FlatMemberDto> UpdateResidentInfoAsync(Guid id, UpdateResidentInfoDto input);
 }

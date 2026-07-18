@@ -26,7 +26,7 @@ public class ResourceReservationManager : DomainService
     /// coexist - the manager picks which one to approve.
     /// </summary>
     public virtual async Task<ResourceReservation> CreateAsync(
-        Guid resourceId, Guid reservedByUserId, DateTime startTime, DateTime endTime)
+        Guid resourceId, Guid? flatId, Guid reservedByUserId, DateTime startTime, DateTime endTime)
     {
         var resource = await _resourceRepository.GetAsync(resourceId);
 
@@ -35,7 +35,7 @@ public class ResourceReservationManager : DomainService
             throw new BusinessException(KatKatErrorCodes.ReservationOverlapsWithAnExistingReservation);
         }
 
-        return new ResourceReservation(GuidGenerator.Create(), resource.TenantId, resourceId, reservedByUserId, startTime, endTime);
+        return new ResourceReservation(GuidGenerator.Create(), resource.TenantId, resourceId, flatId, reservedByUserId, startTime, endTime);
     }
 
     /// <summary>

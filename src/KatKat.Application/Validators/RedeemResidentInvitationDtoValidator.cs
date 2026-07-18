@@ -9,6 +9,8 @@ public class RedeemResidentInvitationDtoValidator : AbstractValidator<RedeemResi
     {
         RuleFor(x => x.Code).NotEmpty();
         RuleFor(x => x.UserName).NotEmpty();
+        RuleFor(x => x.Name).NotEmpty();
+        RuleFor(x => x.Surname).NotEmpty();
         RuleFor(x => x.Email).NotEmpty().EmailAddress();
         RuleFor(x => x.PhoneNumber).NotEmpty();
         RuleFor(x => x.Password).NotEmpty();

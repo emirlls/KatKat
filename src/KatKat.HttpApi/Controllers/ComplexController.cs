@@ -85,11 +85,11 @@ public class ComplexController : KatKatController, IComplexAppService
     public Task<AdminSiteDetailDto> GetDetailAcrossTenantsAsync(Guid id) =>
         _complexAppService.GetDetailAcrossTenantsAsync(id);
 
-    /// <summary>Extends a Complex's subscription end date.</summary>
-    [HttpPost("{id}/extend-subscription")]
-    [Authorize(KatKatPermissions.Complexes.Update)]
-    public Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input) =>
-        _complexAppService.ExtendSubscriptionAsync(id, input);
+    /// <summary>Admin-only: extends any Complex's subscription end date, regardless of which Tenant owns it.</summary>
+    [HttpPost("admin/{id}/extend-subscription")]
+    [Authorize(Roles = "admin")]
+    public Task<ComplexDto> ExtendSubscriptionAcrossAllTenantsAsync(Guid id, ExtendComplexSubscriptionDto input) =>
+        _complexAppService.ExtendSubscriptionAcrossAllTenantsAsync(id, input);
 
     /// <summary>
     /// Recalculates every Complex's KatKat Score right now, instead of waiting for the nightly

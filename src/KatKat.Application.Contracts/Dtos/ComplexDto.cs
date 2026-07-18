@@ -25,4 +25,14 @@ public class ComplexDto : FullAuditedEntityDto<Guid>
     public DateTime? SubscriptionEndDate { get; set; }
 
     public bool IsActive { get; set; }
+
+    /// <summary>
+    /// Only populated for a single-Complex fetch (GetAsync/GetMyComplexAsync) - left at the
+    /// default 0/null for bulk search results, which never display this summary info.
+    /// </summary>
+    public int BuildingCount { get; set; }
+
+    public int FlatCount { get; set; }
+
+    public string? ManagerUserName { get; set; }
 }
