@@ -17,6 +17,11 @@ public class P2PRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual Guid ComplexId { get; protected set; }
 
+    /// <summary>The requester's own Flat within this Complex, resolved server-side at creation
+    /// time - null if the requester somehow has no Flat here (e.g. an edge case, not the normal
+    /// path). Lets everyone see which Building/Flat a request came from.</summary>
+    public virtual Guid? FlatId { get; protected set; }
+
     public virtual Guid RequesterUserId { get; protected set; }
 
     public virtual string Title { get; protected set; } = null!;
@@ -40,6 +45,7 @@ public class P2PRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Guid id,
         Guid? tenantId,
         Guid complexId,
+        Guid? flatId,
         Guid requesterUserId,
         string title,
         string? description,
@@ -48,6 +54,7 @@ public class P2PRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         TenantId = tenantId;
         ComplexId = complexId;
+        FlatId = flatId;
         RequesterUserId = requesterUserId;
         SetTitle(title);
         SetDescription(description);

@@ -10,8 +10,10 @@ namespace KatKat.Mappers;
 public partial class SosAlertMapper : MapperBase<SosAlert, SosAlertDto>
 {
     [MapperIgnoreTarget(nameof(SosAlertDto.FlatNumber))]
+    [MapperIgnoreTarget(nameof(SosAlertDto.BuildingName))]
     public override partial SosAlertDto Map(SosAlert source);
 
     [MapperIgnoreTarget(nameof(SosAlertDto.FlatNumber))]
+    [MapperIgnoreTarget(nameof(SosAlertDto.BuildingName))]
     public override partial void Map(SosAlert source, SosAlertDto destination);
 }

@@ -123,6 +123,10 @@ public static class KatKatDbContextModelCreatingExtensions
             // loose references to the Identity module, same convention as FlatMember.UserId.
             b.HasIndex(x => new { x.ComplexId, x.Status });
             b.HasIndex(x => x.RequesterUserId);
+
+            // SetNull, not Cascade - a deleted Flat shouldn't erase P2PRequest history, just its
+            // Building/Flat attribution.
+            b.HasOne<Flat>().WithMany().HasForeignKey(x => x.FlatId).OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<UserPreference>(b =>
@@ -200,8 +204,13 @@ public static class KatKatDbContextModelCreatingExtensions
             b.Property(x => x.Description).HasMaxLength(IssueConsts.MaxDescriptionLength);
             b.Property(x => x.PhotoUrl).HasMaxLength(IssueConsts.MaxPhotoUrlLength);
 
+            // SetNull, not Cascade - a deleted Building shouldn't erase Issue history, just its
+            // Building attribution.
+            b.HasOne<Building>().WithMany().HasForeignKey(x => x.BuildingId).OnDelete(DeleteBehavior.SetNull);
+
             b.HasIndex(x => new { x.ComplexId, Status = x.Statuses });
             b.HasIndex(x => x.ReporterUserId);
+            b.HasIndex(x => x.BuildingId);
         });
 
         builder.Entity<Resource>(b =>
@@ -224,6 +233,10 @@ public static class KatKatDbContextModelCreatingExtensions
             b.ConfigureByConvention();
 
             b.HasOne<Resource>().WithMany().HasForeignKey(x => x.ResourceId).OnDelete(DeleteBehavior.Cascade).IsRequired();
+
+            // SetNull, not Cascade - a deleted Flat shouldn't erase reservation history, just its
+            // Building/Flat attribution.
+            b.HasOne<Flat>().WithMany().HasForeignKey(x => x.FlatId).OnDelete(DeleteBehavior.SetNull);
 
             // Overlap checks always filter by ResourceId + Status first, so that's the index shape.
             b.HasIndex(x => new { x.ResourceId, x.Status, x.StartTime, x.EndTime });

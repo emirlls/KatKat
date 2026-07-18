@@ -57,7 +57,8 @@ public interface IComplexAppService : IApplicationService
     /// </summary>
     Task<AdminSiteDetailDto> GetDetailAcrossTenantsAsync(Guid id);
 
-    Task<ComplexDto> ExtendSubscriptionAsync(Guid id, ExtendComplexSubscriptionDto input);
+    /// <summary>Admin-only: extends any Complex's subscription end date, regardless of which Tenant owns it.</summary>
+    Task<ComplexDto> ExtendSubscriptionAcrossAllTenantsAsync(Guid id, ExtendComplexSubscriptionDto input);
 
     /// <summary>
     /// Recalculates every Complex's KatKat Score right now instead of waiting for the nightly

@@ -38,6 +38,7 @@ public static class KatKatErrorCodes
     // Issue (07xxxx)
     public const string IssueMustBeOpenToStartProgress = Prefix + "070001";
     public const string IssueMustBeInProgressToResolve = Prefix + "070002";
+    public const string IssueBuildingMustBelongToComplex = Prefix + "070003";
 
     // Resource / ResourceReservation (08xxxx)
     public const string ReservationEndTimeMustBeAfterStartTime = Prefix + "080001";

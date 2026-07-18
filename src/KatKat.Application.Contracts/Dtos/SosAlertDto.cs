@@ -13,6 +13,9 @@ public class SosAlertDto : FullAuditedEntityDto<Guid>
     /// <summary>Denormalized from Flat.FlatNumber - a raw Guid means nothing to a person reading the SOS floor plan.</summary>
     public string FlatNumber { get; set; } = null!;
 
+    /// <summary>Denormalized from Building.Name (via Flat.BuildingId).</summary>
+    public string BuildingName { get; set; } = null!;
+
     public Guid ReporterUserId { get; set; }
 
     public SosStatuses Status { get; set; }

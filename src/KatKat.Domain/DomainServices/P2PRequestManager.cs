@@ -23,6 +23,7 @@ public class P2PRequestManager : DomainService
     /// </summary>
     public virtual async Task<P2PRequest> CreateAsync(
         Guid complexId,
+        Guid? flatId,
         Guid requesterUserId,
         string title,
         string? description,
@@ -30,6 +31,6 @@ public class P2PRequestManager : DomainService
     {
         var complex = await _complexRepository.GetAsync(complexId);
 
-        return new P2PRequest(GuidGenerator.Create(), complex.TenantId, complexId, requesterUserId, title, description, neededUntil);
+        return new P2PRequest(GuidGenerator.Create(), complex.TenantId, complexId, flatId, requesterUserId, title, description, neededUntil);
     }
 }

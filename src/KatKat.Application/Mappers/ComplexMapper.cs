@@ -12,10 +12,16 @@ public partial class ComplexMapper : MapperBase<Complex, ComplexDto>
     [MapperIgnoreTarget(nameof(ComplexDto.City))]
     [MapperIgnoreTarget(nameof(ComplexDto.District))]
     [MapperIgnoreTarget(nameof(ComplexDto.Neighborhood))]
+    [MapperIgnoreTarget(nameof(ComplexDto.BuildingCount))]
+    [MapperIgnoreTarget(nameof(ComplexDto.FlatCount))]
+    [MapperIgnoreTarget(nameof(ComplexDto.ManagerUserName))]
     public override partial ComplexDto Map(Complex source);
 
     [MapperIgnoreTarget(nameof(ComplexDto.City))]
     [MapperIgnoreTarget(nameof(ComplexDto.District))]
     [MapperIgnoreTarget(nameof(ComplexDto.Neighborhood))]
+    [MapperIgnoreTarget(nameof(ComplexDto.BuildingCount))]
+    [MapperIgnoreTarget(nameof(ComplexDto.FlatCount))]
+    [MapperIgnoreTarget(nameof(ComplexDto.ManagerUserName))]
     public override partial void Map(Complex source, ComplexDto destination);
 }

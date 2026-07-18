@@ -18,6 +18,11 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual Guid ResourceId { get; protected set; }
 
+    /// <summary>The reserver's own Flat within the Resource's Complex, resolved server-side at
+    /// creation time - null if the reserver somehow has no Flat there. Lets everyone see which
+    /// Building/Flat a booking came from.</summary>
+    public virtual Guid? FlatId { get; protected set; }
+
     public virtual Guid ReservedByUserId { get; protected set; }
 
     public virtual DateTime StartTime { get; protected set; }
@@ -35,11 +40,12 @@ public class ResourceReservation : FullAuditedAggregateRoot<Guid>, IMultiTenant
     }
 
     internal ResourceReservation(
-        Guid id, Guid? tenantId, Guid resourceId, Guid reservedByUserId, DateTime startTime, DateTime endTime)
+        Guid id, Guid? tenantId, Guid resourceId, Guid? flatId, Guid reservedByUserId, DateTime startTime, DateTime endTime)
         : base(id)
     {
         TenantId = tenantId;
         ResourceId = resourceId;
+        FlatId = flatId;
         ReservedByUserId = reservedByUserId;
         SetTimeRange(startTime, endTime);
         Status = ReservationStatus.Pending;

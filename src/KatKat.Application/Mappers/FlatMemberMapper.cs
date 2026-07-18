@@ -10,8 +10,12 @@ namespace KatKat.Mappers;
 public partial class FlatMemberMapper : MapperBase<FlatMember, FlatMemberDto>
 {
     [MapperIgnoreTarget(nameof(FlatMemberDto.UserName))]
+    [MapperIgnoreTarget(nameof(FlatMemberDto.Name))]
+    [MapperIgnoreTarget(nameof(FlatMemberDto.Surname))]
     public override partial FlatMemberDto Map(FlatMember source);
 
     [MapperIgnoreTarget(nameof(FlatMemberDto.UserName))]
+    [MapperIgnoreTarget(nameof(FlatMemberDto.Name))]
+    [MapperIgnoreTarget(nameof(FlatMemberDto.Surname))]
     public override partial void Map(FlatMember source, FlatMemberDto destination);
 }
